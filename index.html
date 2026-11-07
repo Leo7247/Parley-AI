@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Parley</title>
+<meta name="description" content="A fast, private-feeling AI chat. No API key needed.">
+<script>try{var c=JSON.parse(localStorage.getItem('pl.cfg'))||{};document.documentElement.dataset.theme=c.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light')}catch(e){document.documentElement.dataset.theme='light'}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f5f7;--sf:#fff;--sd:#e9edf1;--ink:#0f1720;--mu:#66707d;--ln:#dfe4ea;--ac:#0b7a75;--acf:#fff;--hv:color-mix(in srgb,var(--ink) 7%,transparent);color-scheme:light}
+[data-theme=dark]{--bg:#0d1215;--sf:#141a1e;--sd:#10161a;--ink:#e6ebef;--mu:#8a95a1;--ln:#232b31;--ac:#3cc9bd;--acf:#06201e;color-scheme:dark}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font:15.5px/1.65 Geist,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+button,select,textarea,input{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;display:block}
+.app{display:flex;height:100%}
+aside{width:272px;flex:none;background:var(--sd);border-right:1px solid var(--ln);display:flex;flex-direction:column;padding:16px 10px;padding-top:calc(16px + env(safe-area-inset-top,0px));transition:transform .25s}
+.brand{font:600 22px "Bricolage Grotesque",Geist,sans-serif;letter-spacing:-.03em;padding:2px 10px 16px;display:flex;align-items:center;gap:9px}
+.brand i{width:10px;height:10px;background:var(--ac);border-radius:3px;transform:rotate(45deg)}
+.new{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;font-weight:500;margin-bottom:10px;color:var(--ac)}
+.new:hover,.it:hover,.it.on{background:var(--hv)}
+#list{flex:1;overflow:auto;display:flex;flex-direction:column;gap:1px}
+.it{display:flex;align-items:center;border-radius:8px;padding-left:10px}
+.it span{flex:1;padding:8px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;cursor:pointer}
+.it.on span{font-weight:500}
+.it button{opacity:0;padding:8px;color:var(--mu)}
+.it:hover button,.it.on button{opacity:1}
+.it button:hover{color:#d14343}
+.none{color:var(--mu);font-size:13.5px;padding:8px 10px}
+main{flex:1;min-width:0;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:4px;padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top,0px))}
+#title{flex:1;min-width:0;font-weight:500;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 6px}
+.ib{padding:9px;border-radius:8px;color:var(--mu)}
+.ib:hover{background:var(--hv);color:var(--ink)}
+#menu{display:none}
+select{background:var(--sf);border:1px solid var(--ln);border-radius:8px;padding:6px 8px;font-size:13.5px;max-width:160px;cursor:pointer}
+#scroll{flex:1;overflow:auto;overscroll-behavior:contain}
+.wrap{max-width:740px;margin:0 auto;padding:4px 20px 28px}
+.hero{padding:9vh 0 8px}
+.hero h2{font:600 clamp(36px,7vw,60px)/1.02 "Bricolage Grotesque",Geist,sans-serif;letter-spacing:-.035em}
+.hero p{color:var(--mu);margin:12px 0 30px;font-size:17px}
+.sug button{display:block;width:100%;text-align:left;padding:14px 2px;border-top:1px solid var(--ln)}
+.sug button:last-child{border-bottom:1px solid var(--ln)}
+.sug button:hover b{color:var(--ac)}
+.sug b{display:block;font-weight:600}
+.sug small{color:var(--mu);font-size:14px}
+.msg{margin:24px 0}
+.msg.u{display:flex;justify-content:flex-end}
+.bub{background:color-mix(in srgb,var(--ac) 12%,var(--sf));border:1px solid color-mix(in srgb,var(--ac) 22%,transparent);padding:9px 14px;border-radius:10px;max-width:86%;word-break:break-word}
+.body{word-break:break-word}
+.body p,.body ul,.body ol,.body blockquote,.body .code,.body .tw{margin:0 0 .9em}
+.body>:last-child{margin-bottom:0}
+.body h2,.body h3,.body h4,.body h5{font-weight:600;line-height:1.3;margin:1.3em 0 .45em}
+.body h2{font-size:1.3em}.body h3{font-size:1.15em}.body h4,.body h5{font-size:1em}
+.body ul,.body ol{padding-left:1.4em}
+.body li{margin:.25em 0}
+.body li::marker{color:var(--mu)}
+.body a{color:var(--ac);text-underline-offset:3px}
+.body code{font:13.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--sd);padding:2px 5px;border-radius:5px}
+.code{border:1px solid var(--ln);border-radius:8px;overflow:hidden;background:var(--sf)}
+.ch{display:flex;justify-content:space-between;align-items:center;padding:3px 6px 3px 12px;background:var(--sd);font-size:12.5px;color:var(--mu)}
+.ch button{color:var(--mu);padding:4px 8px;border-radius:6px;font-size:12.5px}
+.ch button:hover{background:var(--hv);color:var(--ink)}
+.code pre{padding:13px 14px;overflow:auto;line-height:1.55}
+.code code{background:none;padding:0;font-size:13px}
+blockquote{border-left:3px solid var(--ac);padding-left:14px;color:var(--mu)}
+.tw{overflow:auto;border:1px solid var(--ln);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--ln)}
+th{background:var(--sd);font-weight:600;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+hr{border:0;border-top:1px solid var(--ln);margin:1.2em 0}
+.tools{display:flex;gap:2px;margin:6px 0 0 -8px;opacity:0;transition:opacity .15s}
+.msg:hover .tools,.msg:last-child .tools{opacity:1}
+.dots{display:inline-flex;gap:5px;padding:8px 0}
+.dots b{width:7px;height:7px;border-radius:50%;background:var(--mu);animation:p 1.1s infinite ease-in-out}
+.dots b:nth-child(2){animation-delay:.15s}.dots b:nth-child(3){animation-delay:.3s}
+@keyframes p{0%,70%,100%{opacity:.25}35%{opacity:1}}
+.err{border:1px solid color-mix(in srgb,#d14343 50%,transparent);background:color-mix(in srgb,#d14343 8%,transparent);border-radius:8px;padding:10px 14px;font-size:14px;margin-top:8px}
+.err button{color:var(--ac);font-weight:600;margin-top:4px;display:block}
+.comp{padding:0 16px 12px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+.box{max-width:740px;margin:0 auto;display:flex;align-items:flex-end;gap:8px;background:var(--sf);border:1px solid var(--ln);border-radius:14px;padding:7px 7px 7px 16px;transition:border-color .15s,box-shadow .15s}
+.box:focus-within{border-color:var(--ac);box-shadow:0 0 0 3px color-mix(in srgb,var(--ac) 18%,transparent)}
+textarea{flex:1;resize:none;border:0;outline:0;background:none;max-height:200px;padding:7px 0;line-height:1.5;font-size:16px}
+#go{width:38px;height:38px;border-radius:9px;background:var(--ac);color:var(--acf);display:grid;place-items:center;flex:none;transition:opacity .15s}
+#go:disabled{opacity:.3;cursor:default}
+.fine{text-align:center;color:var(--mu);font-size:12.5px;margin-top:8px}
+dialog{border:1px solid var(--ln);border-radius:12px;background:var(--sf);color:var(--ink);padding:22px;width:min(460px,92vw);margin:auto}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h3{font:600 22px "Bricolage Grotesque",Geist,sans-serif;letter-spacing:-.02em;margin-bottom:6px}
+dialog label{display:block;font-size:13.5px;font-weight:500;margin:16px 0 6px}
+dialog label small{display:block;font-weight:400;color:var(--mu)}
+dialog textarea,dialog input{width:100%;border:1px solid var(--ln);border-radius:8px;padding:9px 12px;background:var(--bg);font-size:14.5px;max-height:none}
+.row{display:flex;justify-content:space-between;gap:8px;margin-top:20px}
+.btn{padding:8px 16px;border-radius:8px;border:1px solid var(--ln);font-weight:500;font-size:14px}
+.btn.p{background:var(--ac);color:var(--acf);border-color:var(--ac)}
+.btn.d{color:#d14343}
+.stat{color:var(--mu);display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14.5px}
+.pg{flex-basis:100%;height:4px;background:var(--ln);border-radius:2px;overflow:hidden}
+.pg i{display:block;height:100%;background:var(--ac);transition:width .3s}
+.src{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.src a{font-size:12.5px;color:var(--mu);text-decoration:none;border:1px solid var(--ln);border-radius:6px;padding:3px 8px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.src a:hover{color:var(--ac);border-color:var(--ac)}
+.box{padding-left:7px}
+#web{width:38px;height:38px;display:grid;place-items:center;flex:none}
+#web.on{color:var(--ac);background:color-mix(in srgb,var(--ac) 14%,transparent)}
+.scrim{display:none}
+@media(max-width:820px){
+aside{position:fixed;inset:0 auto 0 0;z-index:20;transform:translateX(-103%);width:min(300px,86vw)}
+body.open aside{transform:none}
+body.open .scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10}
+#menu{display:block}
+.it button{opacity:1}
+select{max-width:128px}
+.hero{padding-top:5vh}}
+@media(pointer:coarse){.tools{opacity:1}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside>
+ <div class="brand"><i></i>Parley</div>
+ <button class="new" id="new"><span data-ic="plus"></span>New chat</button>
+ <div id="list"></div>
+</aside>
+<div class="scrim" id="scrim"></div>
+<main>
+ <header>
+  <button class="ib" id="menu" aria-label="Open chats" data-ic="menu"></button>
+  <div id="title">New chat</div>
+  <select id="model" aria-label="Model"></select>
+  <button class="ib" id="theme" aria-label="Switch theme"></button>
+  <button class="ib" id="cfg" aria-label="Settings" data-ic="sliders"></button>
+ </header>
+ <div id="scroll"><div class="wrap" id="thread"></div></div>
+ <div class="comp">
+  <div class="box">
+   <button class="ib" id="web" aria-label="Search the web" aria-pressed="true" title="Search the web" data-ic="globe"></button>
+   <textarea id="in" rows="1" placeholder="Message Parley" aria-label="Message"></textarea>
+   <button id="go" aria-label="Send" disabled></button>
+  </div>
+  <div class="fine">Parley Mind runs in your browser. Free online models are served by Pollinations. Check anything important.</div>
+ </div>
+</main>
+</div>
+<dialog id="dlg">
+ <h3>Settings</h3>
+ <label for="sys">Custom instructions<small>Added to every chat, for example "Answer briefly" or "Explain like I'm a beginner".</small></label>
+ <textarea id="sys" rows="4"></textarea>
+ <label for="mu">Parley Mind server<small>Optional. Your Hugging Face Space link, for testing. Visitors only get it if it is also pasted into index.html.</small></label>
+ <input id="mu" autocomplete="off" spellcheck="false" placeholder="https://you-parley-mind.hf.space">
+ <div class="row"><button class="btn d" id="wipe">Delete all chats</button><button class="btn p" id="ok">Save</button></div>
+</dialog>
+<script>
+(()=>{
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const I={menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',plus:'<path d="M12 5v14M5 12h14"/>',up:'<path d="M12 19V5M5 12l7-7 7 7"/>',stop:'<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>',copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>',ref:'<path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/>',trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',sliders:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',ok:'<path d="M5 12l5 5L20 7"/>',globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>'};
+const ic=n=>`<svg viewBox="0 0 24 24">${I[n]}</svg>`;
+$$('[data-ic]').forEach(e=>e.innerHTML=ic(e.dataset.ic));
+const ls={g(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},s(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
+let chats=ls.g('pl.chats',[]),cfg=Object.assign({model:'mind',custom:'',mindUrl:'',sys:'',theme:'',web:true},ls.g('pl.cfg',{})),cur=null,busy=false,ctl=null,stick=true;
+const saveCfg=()=>ls.s('pl.cfg',cfg),save=()=>ls.s('pl.chats',chats.slice(0,60));
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const inp=$('#in'),go=$('#go'),sc=$('#scroll'),th=$('#thread');
+
+/* markdown */
+function inline(s){const c=[];s=s.replace(/`([^`]+)`/g,(_,x)=>'\0'+(c.push(x)-1)+'\0');
+ s=s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/(^|[^*\w])\*([^*\n]+)\*/g,'$1<em>$2</em>').replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+ return s.replace(/\0(\d+)\0/g,(_,i)=>'<code>'+c[i]+'</code>')}
+function blocks(t){const L=t.split('\n');let h='',i=0;
+ while(i<L.length){const l=L[i];if(!l.trim()){i++;continue}let m;
+  if(m=l.match(/^(#{1,4})\s+(.*)/)){const n=m[1].length+1;h+=`<h${n}>${inline(m[2])}</h${n}>`;i++}
+  else if(/^\s*[-*]\s+/.test(l)||/^\s*\d+[.)]\s+/.test(l)){const ol=/^\s*\d/.test(l),re=ol?/^\s*\d+[.)]\s+/:/^\s*[-*]\s+/;let it='';
+   while(i<L.length&&re.test(L[i])){it+='<li>'+inline(L[i].replace(re,''))+'</li>';i++}h+=ol?`<ol>${it}</ol>`:`<ul>${it}</ul>`}
+  else if(/^&gt;/.test(l)){const q=[];while(i<L.length&&/^&gt;/.test(L[i])){q.push(L[i].replace(/^&gt;\s?/,''));i++}h+=`<blockquote>${inline(q.join('<br>'))}</blockquote>`}
+  else if(l.includes('|')&&/^\s*\|?\s*:?-{2,}/.test(L[i+1]||'')){const row=r=>r.trim().replace(/^\||\|$/g,'').split('|').map(c=>inline(c.trim())),hd=row(l);i+=2;let b='';
+   while(i<L.length&&L[i].trim()&&L[i].includes('|')){b+='<tr>'+row(L[i]).map(c=>`<td>${c}</td>`).join('')+'</tr>';i++}
+   h+=`<div class="tw"><table><thead><tr>${hd.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${b}</tbody></table></div>`}
+  else if(/^\s*(-{3,}|\*{3,})\s*$/.test(l)){h+='<hr>';i++}
+  else{const p=[L[i++]];while(i<L.length&&L[i].trim()&&!/^(#{1,4}\s|\s*[-*]\s|\s*\d+[.)]\s|&gt;)/.test(L[i])&&!L[i].includes('|'))p.push(L[i++]);h+=`<p>${inline(p.join('<br>'))}</p>`}}
+ return h}
+function md(src){return src.split('```').map((p,i)=>{
+ if(i%2){const n=p.indexOf('\n'),lang=(n<0?p:p.slice(0,n)).trim(),code=n<0?'':p.slice(n+1).replace(/\n$/,'');
+  return `<div class="code"><div class="ch"><span>${esc(lang||'code')}</span><button data-copy>Copy</button></div><pre><code>${esc(code)}</code></pre></div>`}
+ return blocks(esc(p))}).join('')}
+
+/* views */
+const SUG=[['Explain something','How do black holes work?'],['Do the math','What is 18% of 2450?'],['Look someone up','Who was Ada Lovelace?'],['Convert units','Convert 72 °F to Celsius']];
+const greet=()=>{const h=new Date().getHours();return h<5?'Still up?':h<12?'Good morning.':h<18?'Good afternoon.':'Good evening.'};
+function renderList(){$('#list').innerHTML=chats.length?chats.map(c=>`<div class="it${c===cur?' on':''}" data-id="${c.id}"><span>${esc(c.title)}</span><button data-del aria-label="Delete chat">${ic('trash')}</button></div>`).join(''):'<div class="none">Your chats will show up here.</div>'}
+function msgHTML(m,i,last){
+ if(m.role==='user')return `<div class="msg u"><div class="bub">${esc(m.content).replace(/\n/g,'<br>')}</div></div>`;
+ const b=(m.content?md(m.content):'')+(m.error?`<div class="err">${esc(m.error)}<button data-act="retry">Try again</button></div>`:'')||'<span class="dots"><b></b><b></b><b></b></span>';
+ const t=m.content&&!(busy&&last)?`<div class="tools"><button class="ib" data-act="copy" data-n="${i}" aria-label="Copy reply">${ic('copy')}</button>${last?`<button class="ib" data-act="regen" aria-label="Regenerate reply">${ic('ref')}</button>`:''}</div>`:'';
+ const r=m.src?.length?`<div class="src">${m.src.map((x,i)=>`<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${i+1}. ${esc(x.title)}</a>`).join('')}</div>`:'';
+ return `<div class="msg"><div class="body">${b}</div>${r}${t}</div>`}
+function renderThread(){const ms=cur?cur.msgs:[];$('#title').textContent=cur?cur.title:'New chat';
+ th.innerHTML=ms.length?ms.map((m,i)=>msgHTML(m,i,i===ms.length-1)).join(''):`<div class="hero"><h2>${greet()}</h2><p>Ask a question, run a calculation, or convert a unit.</p><div class="sug">${SUG.map(([a,b],i)=>`<button data-s="${i}"><b>${a}</b><small>${b}</small></button>`).join('')}</div></div>`;
+ follow()}
+const follow=()=>{if(stick)sc.scrollTop=sc.scrollHeight};
+sc.addEventListener('scroll',()=>{stick=sc.scrollHeight-sc.scrollTop-sc.clientHeight<90});
+function setBusy(){go.innerHTML=ic(busy?'stop':'up');go.disabled=!busy&&!inp.value.trim();go.setAttribute('aria-label',busy?'Stop':'Send')}
+
+/* chat */
+const errText=e=>{const x=e?.error??e;return 'Couldn’t get a reply: '+(typeof x==='string'?x:x?.message||x?.msg||e?.message||'the request failed')+'. Try again, or pick another model.'};
+async function send(text){if(busy||!text.trim())return;
+ if(!cur){cur={id:uid(),title:text.trim().slice(0,50),msgs:[]};chats.unshift(cur);renderList()}
+ cur.msgs.push({role:'user',content:text.trim()});save();stick=true;await reply()}
+let FREE=[['openai','OpenAI']];
+const stat=(e,t)=>{if(e)e.innerHTML=`<div class="stat"><span class="dots"><b></b><b></b><b></b></span>${esc(t)}</div>`};
+async function wiki(q){
+ const r=await fetch('https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=3&prop=extracts|info&inprop=url&exintro=1&explaintext=1&exchars=800&format=json&origin=*&gsrsearch='+encodeURIComponent(q),{signal:AbortSignal.timeout?.(8000)});
+ const j=await r.json();
+ return Object.values(j.query?.pages||{}).sort((a,b)=>a.index-b.index).filter(p=>p.extract).map(p=>({title:p.title,url:p.fullurl,text:p.extract}))}
+const POLL='https://text.pollinations.ai/openai',PERSONA='You are Parley Mind, a concise, honest assistant. Say so when you are unsure.';
+const MIND_URL=''; // paste your Hugging Face Space link here, e.g. https://yourname-parley-mind.hf.space
+const mindUrl=()=>(cfg.mindUrl||MIND_URL).trim().replace(/\/+$/,'');
+async function chatFree(url,model,messages,stream,ab,ms){
+ const to=ms?setTimeout(()=>ab.abort(),ms):0;let r;
+ try{r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(url===POLL?{model,messages,stream,private:true}:{model,messages,stream}),signal:ab.signal})}
+ catch(e){if(e.name==='AbortError')throw e;throw new Error('couldn’t reach the AI service. Check your connection or turn off the ad blocker')}
+ finally{clearTimeout(to)}
+ if(!r.ok){let d='';try{d=(await r.text()).replace(/\s+/g,' ').slice(0,140)}catch{}throw new Error(r.status===429?'the free service is busy. Wait a few seconds':'the service returned '+r.status+(d?' ('+d+')':''))}
+ return r}
+async function* sse(r,c){
+ if(!(r.headers.get('content-type')||'').includes('event-stream')){const j=await r.json();yield j.choices?.[0]?.message?.content||'';return}
+ const rd=r.body.getReader(),dec=new TextDecoder();let buf='';
+ while(true){const{done,value}=await rd.read();if(done||c.stop){try{rd.cancel()}catch{}return}
+  buf+=dec.decode(value,{stream:true});const parts=buf.split('\n');buf=parts.pop();
+  for(const l of parts){if(!l.startsWith('data:'))continue;const d=l.slice(5).trim();if(d==='[DONE]')return;try{const o=JSON.parse(d),t=o.choices?.[0]?.delta?.content??o.response;if(t)yield t}catch{}}}}
+/* Parley Mind: built-in search-and-answer engine (no model, no download) */
+const STOP=new Set('a an the is are was were be been of in on at to for from by with and or but as it its this that these those what who whom whose which when where why how does do did can could should would will about tell me please explain describe define give some any more know i you your my there their them they he she his her him go continue'.split(' '));
+const words=t=>t.toLowerCase().match(/[a-z0-9]+/g)||[],stem=w=>w.replace(/(ing|ed|es|s)$/,'');
+const fmt=v=>Number(v.toPrecision(10)).toLocaleString('en-US',{maximumFractionDigits:6});
+function calc(src){const t=src.match(/\d*\.?\d+|\*\*|[-+*/()%]|[a-z]+/g)||[];let i=0;
+ const F={sqrt:Math.sqrt,sin:Math.sin,cos:Math.cos,tan:Math.tan,log:Math.log10,ln:Math.log,abs:Math.abs},C={pi:Math.PI,e:Math.E};
+ const prim=()=>{const x=t[i++];if(x==='('){const v=add();i++;return v}if(x==='-')return-pow();if(x==='+')return pow();if(Object.hasOwn(F,x))return F[x](prim());if(Object.hasOwn(C,x))return C[x];const n=parseFloat(x);if(isNaN(n))throw 0;return n};
+ const pow=()=>{const b=prim();return t[i]==='**'?(i++,b**pow()):b};
+ const mul=()=>{let v=pow();while(t[i]==='*'||t[i]==='/'||t[i]==='%'){const o=t[i++],r=pow();v=o==='*'?v*r:o==='/'?v/r:v%r}return v};
+ const add=()=>{let v=mul();while(t[i]==='+'||t[i]==='-'){const o=t[i++],r=mul();v=o==='+'?v+r:v-r}return v};
+ const v=add();if(i<t.length||!isFinite(v))throw 0;return v}
+function tryMath(q){
+ const s=q.toLowerCase().replace(/^(what(?:'s|’s| is)|calculate|compute|solve|evaluate|how much is)\s+/,'').replace(/[?=.\s]+$/,'').replace(/(\d),(?=\d{3}\b)/g,'$1').replace(/(\d[\d.]*)\s*%\s*of\s*(\d[\d.]*)/g,'($1/100*$2)').replace(/square root of\s*([\d.]+)/g,'sqrt($1)').replace(/[×x](?=\s*[\d(])/g,'*').replace(/÷/g,'/').replace(/\^/g,'**');
+ if(!/\d/.test(s)||s.replace(/sqrt|sin|cos|tan|log|ln|abs|pi|e/g,'').replace(/[\d\s+\-*/().%]/g,''))return null;
+ try{return `**${fmt(calc(s))}**`}catch{return null}}
+const U={len:{km:1e3,kilometer:1e3,kilometre:1e3,m:1,meter:1,metre:1,cm:.01,mm:.001,mi:1609.344,mile:1609.344,ft:.3048,foot:.3048,feet:.3048,in:.0254,inch:.0254,yd:.9144,yard:.9144},mass:{kg:1,kilogram:1,g:.001,gram:.001,lb:.45359237,pound:.45359237,oz:.028349523,ounce:.028349523,t:1e3,tonne:1e3},vol:{l:1,liter:1,litre:1,ml:.001,gal:3.785411784,gallon:3.785411784,cup:.2365882365}},TEMP={c:'c',celsius:'c',f:'f',fahrenheit:'f',k:'k',kelvin:'k'};
+function tryConvert(q){
+ const m=q.toLowerCase().match(/(-?\d[\d,.]*)\s*(?:degrees?\s*)?°?\s*([a-z]+)\s+(?:to|in|into|as)\s+(?:degrees?\s*)?°?\s*([a-z]+)\s*\??$/);if(!m)return null;
+ const n=parseFloat(m[1].replace(/,/g,'')),a=m[2],b=m[3],nm=u=>[u,u.replace(/s$/,''),u.replace(/es$/,'')],ta=Object.hasOwn(TEMP,a)&&TEMP[a],tb=Object.hasOwn(TEMP,b)&&TEMP[b];
+ if(ta&&tb){const k=ta==='c'?n+273.15:ta==='f'?(n-32)*5/9+273.15:n,r=tb==='c'?k-273.15:tb==='f'?(k-273.15)*9/5+32:k;return `**${fmt(n)} °${ta.toUpperCase()} = ${fmt(r)} °${tb.toUpperCase()}**`}
+ for(const t of Object.values(U)){const f=nm(a).find(x=>Object.hasOwn(t,x)),g=nm(b).find(x=>Object.hasOwn(t,x));if(f&&g)return `**${fmt(n)} ${a} = ${fmt(n*t[f]/t[g])} ${b}**`}
+ return null}
+const sents=t=>t.replace(/\s*\([^()]*[ˈˌ/][^()]*\)/g,'').replace(/\[\d+\]/g,'').replace(/\s+/g,' ').trim().split(/(?<=[.!?])\s+(?=[A-Z0-9"“(])/).filter(x=>x.length>25&&x.length<420);
+async function wp(q){const r=await fetch('https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=5&prop=extracts|info&inprop=url&exintro=1&explaintext=1&exchars=3000&format=json&origin=*&gsrsearch='+encodeURIComponent(q),{signal:AbortSignal.timeout?.(9000)});const j=await r.json();
+ return Object.values(j.query?.pages||{}).sort((a,b)=>a.index-b.index).filter(p=>p.extract&&!/may refer to/i.test(p.extract.slice(0,200)))}
+async function mind(chat,say){
+ const ms=chat.msgs,q=ms[ms.length-2].content.trim(),ql=q.toLowerCase(),raw=ql.replace(/[?!.]+$/,'');let r;
+ if(r=tryMath(q)||tryConvert(q))return{text:r};
+ if(/^(what('s|’s| is)( the)? )?(current )?(time|date|day)( is it| today| now)?$|what (day|time) is it|today'?s date/.test(raw))return{text:'It’s '+new Date().toLocaleString(undefined,{dateStyle:'full',timeStyle:'short'})+'.'};
+ if(/^(hi|hello|hey|yo|hola|good (morning|afternoon|evening))\b/.test(raw)&&raw.length<25)return{text:'Hi! Ask me a question, give me something to calculate, or convert a unit.'};
+ if(/\b(who|what) are you|your name|are you (an? )?(ai|llm|bot|human|chatgpt|gpt)/.test(raw))return{text:'I’m **Parley Mind**, a search-and-answer engine written for this page. I’m not a large language model. I search Wikipedia live, pick the sentences that best answer your question, and do maths and unit conversions myself. For writing or coding, pick a Cloud model in the menu.'};
+ if(/^(thanks|thank you|thx|ty)\b/.test(raw))return{text:'Anytime.'};
+ if(/^(please |can you |could you )?(write|draft|compose|generate|translate|rewrite|make me|create)\b/.test(raw))return{text:'I can’t write or generate new text. I look things up, do maths and convert units. Pick a Cloud model in the menu for writing and coding.'};
+ const core=words(raw).filter(w=>!STOP.has(w)),prior=[...ms].reverse().find(x=>x.topic)?.topic,
+  fol=prior&&(core.length<3||/\b(it|its|he|she|his|her|they|them|their|this|that|these|those)\b/.test(raw)||/^(more|go on|continue|and )/.test(raw));
+ say('Searching Wikipedia…');
+ const lists=await Promise.all([wp((fol?[prior,...core]:core).join(' ')||raw),wp(fol?prior+' '+raw:raw)].map(p=>p.catch(()=>[]))),pg=new Map();
+ lists.forEach(l=>l.forEach((p,i)=>{const e=pg.get(p.pageid)||Object.assign({rank:0},p);e.rank+=1/(i+2);pg.set(p.pageid,e)}));
+ const top=[...pg.values()].sort((a,b)=>b.rank-a.rank).slice(0,3);
+ if(!top.length)return{text:'I couldn’t find anything on that. Try different wording, or pick a Cloud model in the menu.',topic:prior};
+ say('Reading '+top.length+' articles…');
+ const cs=[...new Set((fol?[prior,...core]:core).flatMap(words).map(stem))],cand=[];
+ top.forEach((p,pi)=>sents(p.extract).forEach((s,si)=>cand.push({s,pi,si,t:new Set(words(s).map(stem))})));
+ const wt=Object.fromEntries(cs.map(t=>[t,Math.log(2+cand.length/(1+cand.filter(c=>c.t.has(t)).length))])),tot=cs.reduce((a,t)=>a+wt[t],0)||1,used=chat.used||=[];
+ cand.forEach(c=>{let v=cs.reduce((a,t)=>a+(c.t.has(t)?wt[t]:0),0)/tot;
+  v+=(c.si===0?.3:c.si===1?.12:0)/(1+c.pi)+.25/(c.pi+1);
+  if(/^(when|what year)/.test(raw)&&/\b(1[0-9]{3}|20[0-9]{2})\b/.test(c.s))v+=.25;
+  if(/^how (many|much|old|tall|long|far|big)/.test(raw)&&/\d/.test(c.s))v+=.2;
+  if(/^(who|what)\b/.test(raw)&&c.si<2&&/\b(is|was|are|were|refers to)\b/.test(c.s.slice(0,160)))v+=.15;
+  if(/^(why|how)\b/.test(raw)&&/\b(because|due to|caused|process|result|when|which|by)\b/.test(c.s))v+=.12;
+  c.v=used.includes(c.s)?-1:v});
+ const rk=cand.filter(c=>c.v>0).sort((a,b)=>b.v-a.v);
+ if(!rk.length)return{text:'That’s everything I have on that topic. Ask something new, or pick a Cloud model for deeper analysis.',topic:prior};
+ const best=rk[0],pick=rk.filter(c=>c.v>=best.v*.55).slice(0,4).sort((a,b)=>a.pi-b.pi||a.si-b.si),order=[...new Set(pick.map(c=>c.pi))];
+ pick.forEach(c=>used.push(c.s));
+ return{text:(best.v<.3?'I’m not certain this answers it, but this is the closest I found:\n\n':'')+order.map((pi,n)=>pick.filter(c=>c.pi===pi).map(c=>c.s).join(' ')+` [${n+1}]`).join('\n\n'),src:order.map(i=>({title:top[i].title,url:top[i].fullurl})),topic:top[best.pi].title}}
+async function reply(){
+ const chat=cur,m={role:'assistant',content:''},c=ctl={stop:false,done:false,ab:new AbortController()};
+ chat.msgs.push(m);busy=true;stick=true;renderThread();setBusy();
+ const el=()=>cur===chat?th.querySelector('.msg:last-child .body'):null;
+ const push=t=>{m.content+=t;const e=el();if(e){e.innerHTML=md(m.content);follow()}};
+ c.fin=()=>{if(c.done)return;c.done=true;busy=false;const k=chat.msgs.indexOf(m);if(k>=0&&!m.content&&!m.error)chat.msgs.splice(k,1);save();if(cur===chat)renderThread();renderList();setBusy()};
+ const llm=async(url,model,useWeb,persona,ms)=>{
+  const hist=chat.msgs.slice(-13,-1).filter(x=>x.content),last=hist[hist.length-1].content,day=new Date().toDateString();
+  const core=words(last.toLowerCase()).filter(w=>!STOP.has(w)).slice(0,8);let web='';
+  if(useWeb&&core.length&&last.length>12&&!/^(write|draft|compose|translate|rewrite|fix|debug|code|hi|hello|thanks)\b/i.test(last)){
+   stat(el(),'Searching the web…');
+   try{const res=await wiki(core.join(' '));if(res.length){m.src=res.map(({title,url})=>({title,url}));web=res.map((x,i)=>`[${i+1}] ${x.title}: ${x.text}`).join('\n\n')}}catch{}}
+  const sys=[persona,cfg.sys.trim(),`Today is ${day}.`,web&&`Web results are below. Use them when relevant and cite them as [1], [2]. If they don’t help, ignore them.\n\n${web}`].filter(Boolean).join('\n\n');
+  stat(el(),'Thinking…');
+  for await(const t of sse(await chatFree(url,model,[{role:'system',content:sys},...hist],true,c.ab,ms),c))push(t);
+  if(!m.content&&!c.stop)throw new Error('the model sent an empty reply')};
+ try{
+  if(cfg.model==='mind'){
+   const u=mindUrl();
+   if(u){try{await llm(u+'/v1/chat/completions','parley',true,PERSONA,25000);return c.fin()}catch(e){if(c.stop||m.content)throw e;m.src=undefined;c.ab=new AbortController()}}
+   const a=await mind(chat,t=>stat(el(),t));if(u)a.text='*Parley Mind’s AI server is asleep or unreachable, so this answer comes from the built-in engine.*\n\n'+a.text;
+   m.src=a.src;m.topic=a.topic;for(const w of a.text.split(/(?<=\s)/)){if(c.stop)break;push(w);await new Promise(r=>setTimeout(r,10))}return c.fin()}
+  await llm(POLL,cfg.model,cfg.web)
+ }catch(e){if(!c.stop)m.error=errText(e)}
+ c.fin()}
+function stop(){if(ctl&&!ctl.done){ctl.stop=true;ctl.ab?.abort();ctl.fin()}}
+function submit(){const v=inp.value.trim();if(busy||!v)return;inp.value='';fit();send(v)}
+function fit(){inp.style.height='auto';inp.style.height=Math.min(inp.scrollHeight,200)+'px';setBusy()}
+function openChat(c){stop();cur=c;stick=true;renderThread();renderList();closeNav();sc.scrollTop=sc.scrollHeight}
+function newChat(){stop();cur=null;renderThread();renderList();closeNav();if(!matchMedia('(pointer:coarse)').matches)inp.focus()}
+const closeNav=()=>document.body.classList.remove('open');
+const flash=(b,h)=>{const o=b.innerHTML;b.innerHTML=h;setTimeout(()=>b.innerHTML=o,1200)};
+const copy=t=>navigator.clipboard?.writeText(t).catch(()=>{});
+
+/* events */
+inp.addEventListener('input',fit);
+inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&!matchMedia('(pointer:coarse)').matches){e.preventDefault();submit()}});
+go.onclick=()=>busy?stop():submit();
+$('#new').onclick=newChat;
+$('#menu').onclick=()=>document.body.classList.add('open');
+$('#scrim').onclick=closeNav;
+$('#list').onclick=e=>{const it=e.target.closest('.it');if(!it)return;const c=chats.find(x=>x.id===it.dataset.id);if(!c)return;
+ if(e.target.closest('[data-del]')){if(c===cur){stop();cur=null;renderThread()}chats=chats.filter(x=>x!==c);save();renderList()}else openChat(c)};
+th.onclick=e=>{const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.s!=null)return send(SUG[b.dataset.s][1]);
+ if('copy' in b.dataset){copy(b.closest('.code').querySelector('code').textContent);return flash(b,'Copied')}
+ const a=b.dataset.act;if(!a||busy)return;
+ if(a==='copy'){copy(cur.msgs[b.dataset.n].content);flash(b,ic('ok'))}
+ else{cur.msgs.pop();reply()}};
+const sel=$('#model');
+const FAM=[['Claude',/claude|anthropic|sonnet|opus|haiku/],['ChatGPT (OpenAI)',/openai|gpt/],['Gemini',/gemini|google/],['DeepSeek',/deepseek/],['Mistral',/mistral/],['Llama',/llama/],['Qwen',/qwen/],['Grok',/grok|xai/]];
+const fillSel=()=>{const o=([v,n])=>`<option value="${esc(v)}">${esc(n)}</option>`,g=new Map();
+ FREE.forEach(x=>{const k=(FAM.find(f=>f[1].test((x[0]+' '+x[1]).toLowerCase()))||['Other'])[0];g.set(k,[...(g.get(k)||[]),x])});
+ sel.innerHTML=`<optgroup label="Built in: no sign-in, no download"><option value="mind">Parley Mind</option></optgroup>`+[...FAM.map(f=>f[0]),'Other'].filter(k=>g.has(k)).map(k=>`<optgroup label="${k}: free, no key">${g.get(k).map(o).join('')}</optgroup>`).join('');
+ if(cfg.model!=='mind'&&!FREE.some(x=>x[0]===cfg.model))sel.insertAdjacentHTML('beforeend',o([cfg.model,cfg.model]));sel.value=cfg.model};
+fillSel();
+(async()=>{try{const j=await(await fetch('https://text.pollinations.ai/models',{signal:AbortSignal.timeout?.(8000)})).json();
+ const L=j.filter(x=>x.name&&!/audio|tts|midi|unity|evil|image|flux/i.test(x.name)&&(!x.output_modalities||x.output_modalities.includes('text'))&&(!x.tier||x.tier==='anonymous')).slice(0,40);
+ if(L.length){FREE=L.map(x=>[x.name,(x.description||x.name).slice(0,40)]);fillSel()}}catch{}})();
+const wb=$('#web'),paintWeb=()=>{wb.classList.toggle('on',cfg.web);wb.setAttribute('aria-pressed',cfg.web);wb.style.display=cfg.model==='mind'?'none':''};wb.onclick=()=>{cfg.web=!cfg.web;saveCfg();paintWeb()};paintWeb();
+sel.onchange=()=>{cfg.model=sel.value;saveCfg();paintWeb();};
+const paintTheme=()=>$('#theme').innerHTML=ic(document.documentElement.dataset.theme==='dark'?'sun':'moon');
+$('#theme').onclick=()=>{const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=cfg.theme=t;saveCfg();paintTheme()};
+const dlg=$('#dlg'),openCfg=()=>{$('#sys').value=cfg.sys;$('#mu').value=cfg.mindUrl;dlg.showModal()};
+$('#cfg').onclick=openCfg;
+$('#ok').onclick=()=>{cfg.sys=$('#sys').value;cfg.mindUrl=$('#mu').value;saveCfg();dlg.close()};
+$('#wipe').onclick=()=>{if(confirm('Delete all chats? This can’t be undone.')){stop();chats=[];cur=null;save();renderThread();renderList();dlg.close()}};
+dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.close()});
+addEventListener('keydown',e=>{if(e.key==='Escape')closeNav()});
+
+paintTheme();renderList();renderThread();setBusy();
+if(!matchMedia('(pointer:coarse)').matches)inp.focus();
+})();
+</script>
+</body>
+</html>
