@@ -37,6 +37,9 @@ main{flex:1;min-width:0;display:flex;flex-direction:column}
 header{display:flex;align-items:center;gap:4px;padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top,0px))}
 #title{flex:1;min-width:0;font-weight:500;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 6px}
 .ib{padding:9px;border-radius:8px;color:var(--mu)}
+.account{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid var(--ln);background:var(--sf);border-radius:8px;padding:7px 9px;font-size:12px;font-weight:600}
+.account:hover{border-color:var(--ac);color:var(--ac)}
+#cloudStatus{font-size:11px;color:var(--mu);text-align:center;margin-top:3px}
 .ib:hover{background:var(--hv);color:var(--ink)}
 #menu{display:none}
 select{background:var(--sf);border:1px solid var(--ln);border-radius:8px;padding:6px 8px;font-size:13.5px;max-width:160px;cursor:pointer}
@@ -137,6 +140,7 @@ select{max-width:128px}
   <div id="title">New chat</div>
   <select id="model" aria-label="Model"></select>
   <button class="ib" id="theme" aria-label="Switch theme"></button>
+  <button class="account" id="account" type="button">Sign in</button>
   <button class="ib" id="cfg" aria-label="Settings" data-ic="sliders"></button>
  </header>
  <div id="scroll"><div class="wrap" id="thread"></div></div>
@@ -147,6 +151,7 @@ select{max-width:128px}
    <button id="go" aria-label="Send" disabled></button>
   </div>
   <div class="fine">Parley Mind runs on your Cloudflare AI server. Other free online models are served by Pollinations. Check anything important.</div>
+  <div id="cloudStatus" role="status" aria-live="polite">Guest mode — chats saved on this device</div>
  </div>
 </main>
 </div>
@@ -158,7 +163,32 @@ select{max-width:128px}
  <input id="mu" autocomplete="off" spellcheck="false" placeholder="https://parley-mind.leolam6367.workers.dev">
  <div class="row"><button class="btn d" id="wipe">Delete all chats</button><button class="btn p" id="ok">Save</button></div>
 </dialog>
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
+import {
+  getAuth, GoogleAuthProvider, signInWithRedirect, signOut,
+  onAuthStateChanged, getRedirectResult
+} from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
+import {
+  getFirestore, collection, doc, getDocs, setDoc, deleteDoc,
+  onSnapshot
+} from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBrdxGCI4b4vPDy2BQg8Ah0Vqau3TbwnrYI",
+  authDomain: "parley-ai1.firebaseapp.com",
+  projectId: "parley-ai1",
+  storageBucket: "parley-ai1.firebasestorage.app",
+  messagingSenderId: "337525727196",
+  appId: "1:337525727196:web:c08586aadaee1795767919",
+  measurementId: "G-HXBWSHLB2M"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
+const db = getFirestore(firebaseApp);
+const googleProvider = new GoogleAuthProvider();
+
 (()=>{
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const I={menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',plus:'<path d="M12 5v14M5 12h14"/>',up:'<path d="M12 19V5M5 12l7-7 7 7"/>',stop:'<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>',copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>',ref:'<path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/>',trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',sliders:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',ok:'<path d="M5 12l5 5L20 7"/>',globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>'};
@@ -166,7 +196,120 @@ const ic=n=>`<svg viewBox="0 0 24 24">${I[n]}</svg>`;
 $$('[data-ic]').forEach(e=>e.innerHTML=ic(e.dataset.ic));
 const ls={g(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},s(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
 let chats=ls.g('pl.chats',[]),cfg=Object.assign({model:'mind',custom:'',mindUrl:'',sys:'',theme:'',web:true},ls.g('pl.cfg',{})),cur=null,busy=false,ctl=null,stick=true;
-const saveCfg=()=>ls.s('pl.cfg',cfg),save=()=>ls.s('pl.chats',chats.slice(0,60));
+let fbUser=null,cloudReady=false,cloudUnsubscribe=null,cloudTimer=null;
+let guestChats=[...chats],authSwitchToken=0;
+const accountBtn=$('#account'),cloudStatus=$('#cloudStatus');
+const saveCfg=()=>ls.s('pl.cfg',cfg);
+const setCloudStatus=t=>{if(cloudStatus)cloudStatus.textContent=t};
+const accountCacheKey=uid=>'pl.chats.user.'+uid;
+const cloudCollection=uid=>collection(db,'users',uid,'chats');
+function renderAccount(){
+ if(!accountBtn)return;
+ accountBtn.textContent=fbUser?(fbUser.displayName||fbUser.email||'Account'):'Sign in with Google';
+ accountBtn.title=fbUser?'Sign out':'Sign in and sync your chats';
+}
+function mergeChats(local,remote){
+ const map=new Map();
+ for(const c of local)if(c&&c.id)map.set(c.id,c);
+ for(const c of remote)if(c&&c.id){const old=map.get(c.id);if(!old||Number(c.updatedAt||0)>=Number(old.updatedAt||0))map.set(c.id,c)}
+ return [...map.values()].sort((a,b)=>Number(b.updatedAt||0)-Number(a.updatedAt||0)).slice(0,60);
+}
+async function uploadCloudChat(chat,owner=fbUser?.uid){
+ if(!owner||!fbUser||fbUser.uid!==owner||!cloudReady||!chat?.id)return;
+ try{
+  const payload={id:chat.id,title:String(chat.title||'New chat'),msgs:Array.isArray(chat.msgs)?chat.msgs:[],updatedAt:Number(chat.updatedAt||Date.now())};
+  if(new TextEncoder().encode(JSON.stringify(payload)).length>850000){setCloudStatus('This chat is too large to sync.');return}
+  if(!fbUser||fbUser.uid!==owner)return;
+  await setDoc(doc(db,'users',owner,'chats',chat.id),payload);
+  if(fbUser?.uid===owner)setCloudStatus('Cloud synced');
+ }catch(e){console.error('Parley cloud save:',e);if(fbUser?.uid===owner)setCloudStatus('Cloud sync failed — local copy kept')}
+}
+function queueCloudSave(chat){
+ if(!fbUser||!cloudReady||!chat)return;
+ clearTimeout(cloudTimer);
+ const owner=fbUser.uid;
+ cloudTimer=setTimeout(()=>{if(fbUser?.uid===owner)uploadCloudChat(chat)},600);
+}
+async function deleteCloudChat(id){
+ if(!fbUser||!cloudReady)return;
+ try{await deleteDoc(doc(db,'users',fbUser.uid,'chats',id))}catch(e){console.error('Cloud chat delete:',e);setCloudStatus('Could not delete cloud chat')}
+}
+async function deleteAllCloudChats(){
+ if(!fbUser||!cloudReady)return;
+ const owner=fbUser.uid;
+ try{const snap=await getDocs(cloudCollection(owner));await Promise.all(snap.docs.map(d=>deleteDoc(d.ref)));}
+ catch(e){console.error('Cloud wipe:',e);setCloudStatus('Cloud deletion failed')}
+}
+async function switchFirebaseUser(user){
+ const token=++authSwitchToken;
+ if(cloudUnsubscribe){cloudUnsubscribe();cloudUnsubscribe=null}
+ clearTimeout(cloudTimer);cloudReady=false;fbUser=user||null;cur=null;
+ renderAccount();
+ if(!user){chats=[...guestChats];renderList();renderThread();setCloudStatus('Guest mode — chats saved on this device');return}
+ setCloudStatus('Loading your conversations…');
+ try{
+  const cache=ls.g(accountCacheKey(user.uid),[]);
+  const local=Array.isArray(cache)?cache:[];
+  const snap=await getDocs(cloudCollection(user.uid));
+  if(token!==authSwitchToken)return;
+  const remote=snap.docs.map(d=>({...d.data(),id:d.id}));
+  let merged=mergeChats(local,remote);
+  const migrationKey='pl.guestMigrated.'+user.uid;
+  if(!ls.g(migrationKey,false)&&guestChats.length){
+   const importGuest=confirm(`You have ${guestChats.length} guest conversation(s). Copy them into this Google account?`);
+   if(importGuest)merged=mergeChats(merged,guestChats);
+   ls.s(migrationKey,true);
+  }
+  chats=merged;ls.s(accountCacheKey(user.uid),chats);
+  cloudReady=true;
+  for(const c of chats){
+   if(token!==authSwitchToken||!fbUser||fbUser.uid!==user.uid)return;
+   const old=remote.find(x=>x.id===c.id);
+   if(!old||Number(c.updatedAt||0)>Number(old.updatedAt||0))await uploadCloudChat(c,user.uid);
+  }
+  if(token!==authSwitchToken)return;
+  renderList();renderThread();setCloudStatus('Cloud connected');
+  cloudUnsubscribe=onSnapshot(cloudCollection(user.uid),snapshot=>{
+   if(token!==authSwitchToken||!fbUser||fbUser.uid!==user.uid)return;
+   let changed=false;
+   for(const change of snapshot.docChanges()){
+    const id=change.doc.id;
+    if(change.type==='removed'){
+     const ix=chats.findIndex(c=>c.id===id);
+     if(ix!==-1){chats.splice(ix,1);if(cur?.id===id)cur=null;changed=true}
+     continue;
+    }
+    const remoteChat={...change.doc.data(),id};
+    const ix=chats.findIndex(c=>c.id===id),localChat=ix<0?null:chats[ix];
+    if(!localChat||Number(remoteChat.updatedAt||0)>Number(localChat.updatedAt||0)){
+     if(ix<0)chats.push(remoteChat);else chats[ix]=remoteChat;
+     if(cur?.id===id)cur=chats.find(c=>c.id===id);
+     changed=true;
+    }
+   }
+   if(changed){chats=chats.sort((a,b)=>Number(b.updatedAt||0)-Number(a.updatedAt||0)).slice(0,60);ls.s(accountCacheKey(user.uid),chats);renderList();renderThread()}
+  },e=>{console.error('Firestore listener:',e);setCloudStatus('Cloud connection interrupted — local copy kept')});
+ }catch(e){
+  console.error('Parley Firebase:',e);
+  if(token!==authSwitchToken)return;
+  cloudReady=false;chats=localFallbackForUser(user.uid);renderList();renderThread();
+  setCloudStatus('Cloud unavailable — local copy kept');
+ }
+}
+function localFallbackForUser(uid){const c=ls.g(accountCacheKey(uid),[]);return Array.isArray(c)?c:[]}
+accountBtn?.addEventListener('click',async()=>{
+ try{
+  if(fbUser){if(!confirm('Sign out? Your cloud conversations will stay saved.'))return;await signOut(auth)}
+  else{setCloudStatus('Opening Google sign-in…');await signInWithRedirect(auth,googleProvider)}
+ }catch(e){console.error('Google sign-in:',e);setCloudStatus('Sign-in failed');alert(e.message||'Google sign-in failed')}
+});
+onAuthStateChanged(auth,user=>{switchFirebaseUser(user)});
+getRedirectResult(auth).catch(e=>{console.error('Google redirect result:',e);setCloudStatus('Google sign-in could not be completed')});
+function save(){
+ if(cur)cur.updatedAt=Date.now();
+ if(fbUser){ls.s(accountCacheKey(fbUser.uid),chats.slice(0,60));if(cur)queueCloudSave(cur)}
+ else{ls.s('pl.chats',chats.slice(0,60));guestChats=[...chats]}
+}
 const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const inp=$('#in'),go=$('#go'),sc=$('#scroll'),th=$('#thread');
@@ -285,7 +428,7 @@ async function mind(chat,say){
  say('Reading '+top.length+' articles…');
  const cs=[...new Set((fol?[prior,...core]:core).flatMap(words).map(stem))],cand=[];
  top.forEach((p,pi)=>sents(p.extract).forEach((s,si)=>cand.push({s,pi,si,t:new Set(words(s).map(stem))})));
- const wt=Object.fromEntries(cs.map(t=>[t,Math.log(2+cand.length/(1+cand.filter(c=>c.t.has(t)).length))])),tot=cs.reduce((a,t)=>a+wt[t],0)||1,used=chat.used||=[];
+ const wt=Object.fromEntries(cs.map(t=>[t,Math.log(2+cand.length/(1+cand.filter(c=>c.t.has(t)).length))])),tot=cs.reduce((a,t)=>a+wt[t],0)||1,used=chat.used||[];
  cand.forEach(c=>{let v=cs.reduce((a,t)=>a+(c.t.has(t)?wt[t]:0),0)/tot;
   v+=(c.si===0?.3:c.si===1?.12:0)/(1+c.pi)+.25/(c.pi+1);
   if(/^(when|what year)/.test(raw)&&/\b(1[0-9]{3}|20[0-9]{2})\b/.test(c.s))v+=.25;
@@ -341,7 +484,7 @@ $('#new').onclick=newChat;
 $('#menu').onclick=()=>document.body.classList.add('open');
 $('#scrim').onclick=closeNav;
 $('#list').onclick=e=>{const it=e.target.closest('.it');if(!it)return;const c=chats.find(x=>x.id===it.dataset.id);if(!c)return;
- if(e.target.closest('[data-del]')){if(c===cur){stop();cur=null;renderThread()}chats=chats.filter(x=>x!==c);save();renderList()}else openChat(c)};
+ if(e.target.closest('[data-del]')){if(c===cur){stop();cur=null;renderThread()}chats=chats.filter(x=>x!==c);deleteCloudChat(c.id);save();renderList()}else openChat(c)};
 th.onclick=e=>{const b=e.target.closest('button');if(!b)return;
  if(b.dataset.s!=null)return send(SUG[b.dataset.s][1]);
  if('copy' in b.dataset){copy(b.closest('.code').querySelector('code').textContent);return flash(b,'Copied')}
@@ -365,11 +508,11 @@ $('#theme').onclick=()=>{const t=document.documentElement.dataset.theme==='dark'
 const dlg=$('#dlg'),openCfg=()=>{$('#sys').value=cfg.sys;$('#mu').value=cfg.mindUrl;dlg.showModal()};
 $('#cfg').onclick=openCfg;
 $('#ok').onclick=()=>{cfg.sys=$('#sys').value;cfg.mindUrl=$('#mu').value;saveCfg();dlg.close()};
-$('#wipe').onclick=()=>{if(confirm('Delete all chats? This can’t be undone.')){stop();chats=[];cur=null;save();renderThread();renderList();dlg.close()}};
+$('#wipe').onclick=async()=>{if(confirm('Delete all chats? This can’t be undone.')){stop();chats=[];cur=null;save();if(fbUser)await deleteAllCloudChats();else guestChats=[];renderThread();renderList();dlg.close()}};
 dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.close()});
 addEventListener('keydown',e=>{if(e.key==='Escape')closeNav()});
 
-paintTheme();renderList();renderThread();setBusy();
+paintTheme();renderList();renderThread();setBusy();renderAccount();
 if(!matchMedia('(pointer:coarse)').matches)inp.focus();
 })();
 </script>
