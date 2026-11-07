@@ -146,7 +146,7 @@ select{max-width:128px}
    <textarea id="in" rows="1" placeholder="Message Parley" aria-label="Message"></textarea>
    <button id="go" aria-label="Send" disabled></button>
   </div>
-  <div class="fine">Parley Mind runs in your browser. Free online models are served by Pollinations. Check anything important.</div>
+  <div class="fine">Parley Mind runs on your Cloudflare AI server. Other free online models are served by Pollinations. Check anything important.</div>
  </div>
 </main>
 </div>
@@ -154,8 +154,8 @@ select{max-width:128px}
  <h3>Settings</h3>
  <label for="sys">Custom instructions<small>Added to every chat, for example "Answer briefly" or "Explain like I'm a beginner".</small></label>
  <textarea id="sys" rows="4"></textarea>
- <label for="mu">Parley Mind server<small>Optional. Your Hugging Face Space link, for testing. Visitors only get it if it is also pasted into index.html.</small></label>
- <input id="mu" autocomplete="off" spellcheck="false" placeholder="https://you-parley-mind.hf.space">
+ <label for="mu">Parley Mind server<small>Your Cloudflare Worker URL. The default is already configured for this Parley deployment.</small></label>
+ <input id="mu" autocomplete="off" spellcheck="false" placeholder="https://parley-mind.leolam6367.workers.dev">
  <div class="row"><button class="btn d" id="wipe">Delete all chats</button><button class="btn p" id="ok">Save</button></div>
 </dialog>
 <script>
@@ -220,8 +220,14 @@ async function wiki(q){
  const r=await fetch('https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=3&prop=extracts|info&inprop=url&exintro=1&explaintext=1&exchars=800&format=json&origin=*&gsrsearch='+encodeURIComponent(q),{signal:AbortSignal.timeout?.(8000)});
  const j=await r.json();
  return Object.values(j.query?.pages||{}).sort((a,b)=>a.index-b.index).filter(p=>p.extract).map(p=>({title:p.title,url:p.fullurl,text:p.extract}))}
-const POLL='https://text.pollinations.ai/openai',PERSONA='You are Parley Mind, a concise, honest assistant. Say so when you are unsure.';
-const MIND_URL=''; // paste your Hugging Face Space link here, e.g. https://yourname-parley-mind.hf.space
+const POLL='https://text.pollinations.ai/openai';
+const PERSONA=`You are Parley AI, the assistant inside the Parley application.
+Your conversational identity and name are Parley AI (also called Parley Mind).
+Be friendly, curious, clear, and helpful. You are part of the Parley family.
+Do not introduce yourself as ChatGPT, GPT-4, Claude, Gemini, or another product name.
+Do not claim to be a different underlying model. If asked which model powers you, explain that Parley uses an AI model through its server and that you may not have reliable visibility into its exact technical model identity.
+Never invent capabilities, memories, or facts. Say when you are unsure.`;
+const MIND_URL='https://parley-mind.leolam6367.workers.dev'; // Parley Cloudflare Worker
 const mindUrl=()=>(cfg.mindUrl||MIND_URL).trim().replace(/\/+$/,'');
 async function chatFree(url,model,messages,stream,ab,ms){
  const to=ms?setTimeout(()=>ab.abort(),ms):0;let r;
@@ -311,8 +317,9 @@ async function reply(){
  try{
   if(cfg.model==='mind'){
    const u=mindUrl();
-   if(u){try{await llm(u+'/v1/chat/completions','parley',true,PERSONA,25000);return c.fin()}catch(e){if(c.stop||m.content)throw e;m.src=undefined;c.ab=new AbortController()}}
-   const a=await mind(chat,t=>stat(el(),t));if(u)a.text='*Parley Mind’s AI server is asleep or unreachable, so this answer comes from the built-in engine.*\n\n'+a.text;
+   let serverError='';
+   if(u){try{await llm(u+'/v1/chat/completions','parley',true,PERSONA,45000);return c.fin()}catch(e){if(c.stop||m.content)throw e;serverError=e?.message||'unknown server error';m.src=undefined;c.ab=new AbortController()}}
+   const a=await mind(chat,t=>stat(el(),t));if(u)a.text='*Cloudflare AI could not answer ('+serverError+'). This reply is from Parley’s built-in fallback engine, not the language model.*\n\n'+a.text;
    m.src=a.src;m.topic=a.topic;for(const w of a.text.split(/(?<=\s)/)){if(c.stop)break;push(w);await new Promise(r=>setTimeout(r,10))}return c.fin()}
   await llm(POLL,cfg.model,cfg.web)
  }catch(e){if(!c.stop)m.error=errText(e)}
