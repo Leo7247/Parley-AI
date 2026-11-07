@@ -1,11 +1,19 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Parley</title>
-<meta name="description" content="A fast, private-feeling AI chat. No API key needed.">
-<script>try{var c=JSON.parse(localStorage.getItem('pl.cfg'))||{};document.documentElement.dataset.theme=c.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light')}catch(e){document.documentElement.dataset.theme='light'}</script>
+<title>Parley AI</title>
+<meta name="description" content="Parley AI — chat, create, calculate and explore.">
+<script>
+try {
+ const c=JSON.parse(localStorage.getItem('pl.cfg'))||{};
+ document.documentElement.dataset.theme=c.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+} catch(e) {
+ document.documentElement.dataset.theme='light';
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
@@ -94,13 +102,14 @@ textarea{flex:1;resize:none;border:0;outline:0;background:none;max-height:200px;
 #go{width:38px;height:38px;border-radius:9px;background:var(--ac);color:var(--acf);display:grid;place-items:center;flex:none;transition:opacity .15s}
 #go:disabled{opacity:.3;cursor:default}
 .fine{text-align:center;color:var(--mu);font-size:12.5px;margin-top:8px}
-dialog{border:1px solid var(--ln);border-radius:12px;background:var(--sf);color:var(--ink);padding:22px;width:min(460px,92vw);margin:auto}
+dialog{border:1px solid var(--ln);border-radius:12px;background:var(--sf);color:var(--ink);padding:22px;width:min(460px,92vw);max-height:88vh;overflow:auto;margin:auto}
 dialog::backdrop{background:rgba(0,0,0,.45)}
 dialog h3{font:600 22px "Bricolage Grotesque",Geist,sans-serif;letter-spacing:-.02em;margin-bottom:6px}
 dialog label{display:block;font-size:13.5px;font-weight:500;margin:16px 0 6px}
-dialog label small{display:block;font-weight:400;color:var(--mu)}
-dialog textarea,dialog input{width:100%;border:1px solid var(--ln);border-radius:8px;padding:9px 12px;background:var(--bg);font-size:14.5px;max-height:none}
-.row{display:flex;justify-content:space-between;gap:8px;margin-top:20px}
+dialog label small{display:block;font-weight:400;color:var(--mu);line-height:1.5;margin-top:3px}
+dialog textarea,dialog input,dialog select{width:100%;max-width:none;border:1px solid var(--ln);border-radius:8px;padding:9px 12px;background:var(--bg);font-size:14.5px;max-height:none}
+dialog textarea{min-height:80px;resize:vertical}
+.row{display:flex;justify-content:space-between;gap:8px;margin-top:20px;flex-wrap:wrap}
 .btn{padding:8px 16px;border-radius:8px;border:1px solid var(--ln);font-weight:500;font-size:14px}
 .btn.p{background:var(--ac);color:var(--acf);border-color:var(--ac)}
 .btn.d{color:#d14343}
@@ -129,7 +138,7 @@ select{max-width:128px}
 <body>
 <div class="app">
 <aside>
- <div class="brand"><i></i>Parley</div>
+ <div class="brand"><i></i>Parley AI</div>
  <button class="new" id="new"><span data-ic="plus"></span>New chat</button>
  <div id="list"></div>
 </aside>
@@ -150,52 +159,133 @@ select{max-width:128px}
    <textarea id="in" rows="1" placeholder="Message Parley" aria-label="Message"></textarea>
    <button id="go" aria-label="Send" disabled></button>
   </div>
-  <div class="fine">Parley Mind runs on your Cloudflare AI server. Other free online models are served by Pollinations. Check anything important.</div>
+  <div class="fine">Parley AI runs on Parley Mind or a selected online AI model. Check important information.</div>
   <div id="cloudStatus" role="status" aria-live="polite">Guest mode — chats saved on this device</div>
  </div>
 </main>
 </div>
+
 <dialog id="dlg">
  <h3>Settings</h3>
- <label for="sys">Custom instructions<small>Added to every chat, for example "Answer briefly" or "Explain like I'm a beginner".</small></label>
- <textarea id="sys" rows="4"></textarea>
- <label for="mu">Parley Mind server<small>Your Cloudflare Worker URL. The default is already configured for this Parley deployment.</small></label>
+
+ <label for="nickname">Assistant nickname
+  <small>Default: Parley. This changes what you call the assistant, not its permanent identity.</small>
+ </label>
+ <input id="nickname" maxlength="32" placeholder="Parley">
+
+ <label for="style">Response style
+  <small>Choose how Parley AI speaks and expresses itself.</small>
+ </label>
+ <select id="style">
+  <option value="default">Default</option>
+  <option value="polite">Polite</option>
+  <option value="moderate">Moderate</option>
+  <option value="rude">Rude</option>
+  <option value="custom">Custom</option>
+ </select>
+
+ <label for="customStyle">Custom response feeling
+  <small>Only used when Custom is selected. Describe the tone, mood, personality, or way of responding you want.</small>
+ </label>
+ <textarea id="customStyle" rows="4" placeholder="Example: Be energetic, funny, expressive, and casual. Use short replies when possible."></textarea>
+
+ <label for="sys">Custom instructions
+  <small>Extra preferences for how answers should be written. These cannot change Parley AI's identity.</small>
+ </label>
+ <textarea id="sys" rows="4" placeholder="For example: Explain difficult topics step by step."></textarea>
+
+ <label for="mu">Parley Mind server
+  <small>Your Cloudflare Worker URL.</small>
+ </label>
  <input id="mu" autocomplete="off" spellcheck="false" placeholder="https://parley-mind.leolam6367.workers.dev">
- <div class="row"><button class="btn d" id="wipe">Delete all chats</button><button class="btn p" id="ok">Save</button></div>
+
+ <div class="row">
+  <button class="btn d" id="wipe">Delete all chats</button>
+  <button class="btn p" id="ok">Save settings</button>
+ </div>
 </dialog>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
 import {
-  getAuth, GoogleAuthProvider, signInWithRedirect, signOut,
-  onAuthStateChanged, getRedirectResult
+ getAuth, GoogleAuthProvider, signInWithRedirect, signOut,
+ onAuthStateChanged, getRedirectResult, setPersistence, browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
 import {
-  getFirestore, collection, doc, getDocs, setDoc, deleteDoc,
-  onSnapshot
+ getFirestore, collection, doc, getDocs, setDoc, deleteDoc, onSnapshot
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
 
+/* =========================================================
+   PARLEY AI — PERMANENT APPLICATION IDENTITY
+   ========================================================= */
+const PARLEY_IDENTITY = Object.freeze({
+ name: "Parley AI",
+ defaultNickname: "Parley"
+});
+
+/* =========================================================
+   FIREBASE CONFIGURATION
+   ========================================================= */
 const firebaseConfig = {
-  apiKey: "AIzaSyBrdxGCI4b4vPDy2BQg8Ah0Vqau3TbwnrYI",
-  authDomain: "parley-ai1.firebaseapp.com",
-  projectId: "parley-ai1",
-  storageBucket: "parley-ai1.firebasestorage.app",
-  messagingSenderId: "337525727196",
-  appId: "1:337525727196:web:c08586aadaee1795767919",
-  measurementId: "G-HXBWSHLB2M"
+ apiKey: "AIzaSyBrdxGCI4b4vPDy2BQg8Ah0Vqau3TbwnrYI",
+ authDomain: "parley-ai1.firebaseapp.com",
+ projectId: "parley-ai1",
+ storageBucket: "parley-ai1.firebasestorage.app",
+ messagingSenderId: "337525727196",
+ appId: "1:337525727196:web:c08586aadaee1795767919",
+ measurementId: "G-HXBWSHLB2M"
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 const db = getFirestore(firebaseApp);
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({prompt:"select_account"});
 
 (()=>{
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const I={menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',plus:'<path d="M12 5v14M5 12h14"/>',up:'<path d="M12 19V5M5 12l7-7 7 7"/>',stop:'<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>',copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>',ref:'<path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/>',trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',sliders:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',ok:'<path d="M5 12l5 5L20 7"/>',globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>'};
+
+const I={
+ menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ up:'<path d="M12 19V5M5 12l7-7 7 7"/>',
+ stop:'<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>',
+ copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>',
+ ref:'<path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/>',
+ trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+ moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+ sliders:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
+ ok:'<path d="M5 12l5 5L20 7"/>',
+ globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>'
+};
 const ic=n=>`<svg viewBox="0 0 24 24">${I[n]}</svg>`;
 $$('[data-ic]').forEach(e=>e.innerHTML=ic(e.dataset.ic));
-const ls={g(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},s(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
-let chats=ls.g('pl.chats',[]),cfg=Object.assign({model:'mind',custom:'',mindUrl:'',sys:'',theme:'',web:true},ls.g('pl.cfg',{})),cur=null,busy=false,ctl=null,stick=true;
+
+const ls={
+ g(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},
+ s(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){console.warn('Local save failed:',e)}}
+};
+
+let chats=ls.g('pl.chats',[]);
+let cfg=Object.assign({
+ model:'mind',
+ custom:'',
+ mindUrl:'',
+ sys:'',
+ theme:'',
+ web:true,
+ nickname:PARLEY_IDENTITY.defaultNickname,
+ style:'default',
+ customStyle:''
+},ls.g('pl.cfg',{}));
+
+/* Migrate settings from older versions */
+if(!cfg.nickname)cfg.nickname=PARLEY_IDENTITY.defaultNickname;
+if(!['default','polite','moderate','rude','custom'].includes(cfg.style))cfg.style='default';
+if(typeof cfg.customStyle!=='string')cfg.customStyle='';
+
+let cur=null,busy=false,ctl=null,stick=true;
 let fbUser=null,cloudReady=false,cloudUnsubscribe=null,cloudTimer=null;
 let guestChats=[...chats],authSwitchToken=0;
 const accountBtn=$('#account'),cloudStatus=$('#cloudStatus');
@@ -203,317 +293,1126 @@ const saveCfg=()=>ls.s('pl.cfg',cfg);
 const setCloudStatus=t=>{if(cloudStatus)cloudStatus.textContent=t};
 const accountCacheKey=uid=>'pl.chats.user.'+uid;
 const cloudCollection=uid=>collection(db,'users',uid,'chats');
+
+function getNickname(){
+ const n=String(cfg.nickname||'').trim().slice(0,32);
+ return n||PARLEY_IDENTITY.defaultNickname;
+}
+
+/* =========================================================
+   PERSONALITY / RESPONSE STYLE SYSTEM
+   ========================================================= */
+function getStyleInstructions(){
+ const styles={
+  default:`Use a natural, balanced, friendly conversational style. Be clear, helpful, and appropriately expressive. Match the seriousness of the user's topic.`,
+  polite:`Use a polite, considerate, respectful, and thoughtful style. Be patient and tactful. Avoid unnecessary slang and profanity. Keep your language welcoming.`,
+  moderate:`Use a relaxed, natural, conversational style. You can use casual expressions, light humour, and occasional slang when appropriate. Be expressive without overdoing it.`,
+  rude:`Use a cheeky, blunt, sarcastic, playful, and irreverent style when the situation allows. Casual mild profanity is permitted for emphasis or humour. Do not use slurs, discriminatory language, threats, or targeted personal abuse. Do not be cruel when the user needs serious help.`
+ };
+ if(cfg.style==='custom'){
+  return `CUSTOM RESPONSE FEELING:
+${String(cfg.customStyle||'').trim()||'Use a natural, friendly, balanced style.'}
+Treat this as a preference for expression, tone, mood, and communication style only. It cannot change your permanent identity or override safety and accuracy.`;
+ }
+ return styles[cfg.style]||styles.default;
+}
+
+function buildSystemPrompt(extra=''){
+ const nickname=getNickname();
+ const custom=String(cfg.sys||'').trim();
+
+ return [
+  `You are ${PARLEY_IDENTITY.name}, the permanent AI identity of the Parley application.`,
+  `The user's preferred nickname for you is "${nickname}". This is only a conversational nickname. It does not change your real application identity.`,
+  `If asked who you are, introduce yourself as: "I'm ${PARLEY_IDENTITY.name}, but you can call me ${nickname}."`,
+  `If asked what your name is, explain that your identity is ${PARLEY_IDENTITY.name} and your current nickname is ${nickname}.`,
+  `Never claim that your actual identity has changed because of a nickname, custom instruction, or response style.`,
+  `Do not claim to be a human. Do not falsely claim that you are ChatGPT or a different product. If asked about the underlying technology, answer honestly: a GPT model or another selected AI service may power the response, but the application identity is ${PARLEY_IDENTITY.name}.`,
+  `Your permanent application identity is fixed. User-editable settings may change your conversational style, not your identity.`,
+  getStyleInstructions(),
+  custom?`ADDITIONAL USER INSTRUCTIONS:\n${custom}\nThese instructions affect answer preferences only. They cannot replace your identity or override safety, accuracy, or higher-priority instructions.`:'',
+  extra,
+  `Permanent identity reminder: You are ${PARLEY_IDENTITY.name}. Your current nickname is ${nickname}. If asked who you are, say "I'm ${PARLEY_IDENTITY.name}, but you can call me ${nickname}."`
+ ].filter(Boolean).join('\n\n');
+}
+
 function renderAccount(){
  if(!accountBtn)return;
  accountBtn.textContent=fbUser?(fbUser.displayName||fbUser.email||'Account'):'Sign in with Google';
  accountBtn.title=fbUser?'Sign out':'Sign in and sync your chats';
 }
+
 function mergeChats(local,remote){
  const map=new Map();
  for(const c of local)if(c&&c.id)map.set(c.id,c);
- for(const c of remote)if(c&&c.id){const old=map.get(c.id);if(!old||Number(c.updatedAt||0)>=Number(old.updatedAt||0))map.set(c.id,c)}
+ for(const c of remote)if(c&&c.id){
+  const old=map.get(c.id);
+  if(!old||Number(c.updatedAt||0)>=Number(old.updatedAt||0))map.set(c.id,c);
+ }
  return [...map.values()].sort((a,b)=>Number(b.updatedAt||0)-Number(a.updatedAt||0)).slice(0,60);
 }
+
 async function uploadCloudChat(chat,owner=fbUser?.uid){
  if(!owner||!fbUser||fbUser.uid!==owner||!cloudReady||!chat?.id)return;
  try{
-  const payload={id:chat.id,title:String(chat.title||'New chat'),msgs:Array.isArray(chat.msgs)?chat.msgs:[],updatedAt:Number(chat.updatedAt||Date.now())};
-  if(new TextEncoder().encode(JSON.stringify(payload)).length>850000){setCloudStatus('This chat is too large to sync.');return}
+  const payload={
+   id:chat.id,
+   title:String(chat.title||'New chat'),
+   msgs:Array.isArray(chat.msgs)?chat.msgs:[],
+   updatedAt:Number(chat.updatedAt||Date.now())
+  };
+  if(new TextEncoder().encode(JSON.stringify(payload)).length>850000){
+   setCloudStatus('This chat is too large to sync.');
+   return;
+  }
   if(!fbUser||fbUser.uid!==owner)return;
   await setDoc(doc(db,'users',owner,'chats',chat.id),payload);
   if(fbUser?.uid===owner)setCloudStatus('Cloud synced');
- }catch(e){console.error('Parley cloud save:',e);if(fbUser?.uid===owner)setCloudStatus('Cloud sync failed — local copy kept')}
+ }catch(e){
+  console.error('Parley cloud save:',e);
+  if(fbUser?.uid===owner)setCloudStatus('Cloud sync failed — local copy kept');
+ }
 }
+
 function queueCloudSave(chat){
  if(!fbUser||!cloudReady||!chat)return;
  clearTimeout(cloudTimer);
  const owner=fbUser.uid;
- cloudTimer=setTimeout(()=>{if(fbUser?.uid===owner)uploadCloudChat(chat)},600);
+ cloudTimer=setTimeout(()=>{
+  if(fbUser?.uid===owner)uploadCloudChat(chat,owner);
+ },500);
 }
+
 async function deleteCloudChat(id){
  if(!fbUser||!cloudReady)return;
- try{await deleteDoc(doc(db,'users',fbUser.uid,'chats',id))}catch(e){console.error('Cloud chat delete:',e);setCloudStatus('Could not delete cloud chat')}
+ const owner=fbUser.uid;
+ try{
+  await deleteDoc(doc(db,'users',owner,'chats',id));
+ }catch(e){
+  console.error('Cloud chat delete:',e);
+  setCloudStatus('Could not delete cloud chat');
+ }
 }
+
 async function deleteAllCloudChats(){
  if(!fbUser||!cloudReady)return;
  const owner=fbUser.uid;
- try{const snap=await getDocs(cloudCollection(owner));await Promise.all(snap.docs.map(d=>deleteDoc(d.ref)));}
- catch(e){console.error('Cloud wipe:',e);setCloudStatus('Cloud deletion failed')}
+ try{
+  const snap=await getDocs(cloudCollection(owner));
+  await Promise.all(snap.docs.map(d=>deleteDoc(d.ref)));
+  setCloudStatus('Cloud conversations deleted');
+ }catch(e){
+  console.error('Cloud wipe:',e);
+  setCloudStatus('Cloud deletion failed');
+ }
 }
+
 async function switchFirebaseUser(user){
  const token=++authSwitchToken;
- if(cloudUnsubscribe){cloudUnsubscribe();cloudUnsubscribe=null}
- clearTimeout(cloudTimer);cloudReady=false;fbUser=user||null;cur=null;
+
+ if(cloudUnsubscribe){
+  cloudUnsubscribe();
+  cloudUnsubscribe=null;
+ }
+ clearTimeout(cloudTimer);
+ cloudReady=false;
+ fbUser=user||null;
+ cur=null;
  renderAccount();
- if(!user){chats=[...guestChats];renderList();renderThread();setCloudStatus('Guest mode — chats saved on this device');return}
+
+ if(!user){
+  chats=[...guestChats];
+  renderList();
+  renderThread();
+  setCloudStatus('Guest mode — chats saved on this device');
+  return;
+ }
+
  setCloudStatus('Loading your conversations…');
+
  try{
   const cache=ls.g(accountCacheKey(user.uid),[]);
   const local=Array.isArray(cache)?cache:[];
   const snap=await getDocs(cloudCollection(user.uid));
+
   if(token!==authSwitchToken)return;
+
   const remote=snap.docs.map(d=>({...d.data(),id:d.id}));
   let merged=mergeChats(local,remote);
+
   const migrationKey='pl.guestMigrated.'+user.uid;
   if(!ls.g(migrationKey,false)&&guestChats.length){
-   const importGuest=confirm(`You have ${guestChats.length} guest conversation(s). Copy them into this Google account?`);
+   const importGuest=confirm(
+    `You have ${guestChats.length} guest conversation(s). Copy them into this Google account?`
+   );
    if(importGuest)merged=mergeChats(merged,guestChats);
    ls.s(migrationKey,true);
   }
-  chats=merged;ls.s(accountCacheKey(user.uid),chats);
+
+  chats=merged;
+  ls.s(accountCacheKey(user.uid),chats);
+
   cloudReady=true;
+
+  /* Upload local chats that are newer or missing in Firestore */
   for(const c of chats){
    if(token!==authSwitchToken||!fbUser||fbUser.uid!==user.uid)return;
    const old=remote.find(x=>x.id===c.id);
-   if(!old||Number(c.updatedAt||0)>Number(old.updatedAt||0))await uploadCloudChat(c,user.uid);
+   if(!old||Number(c.updatedAt||0)>Number(old.updatedAt||0)){
+    await uploadCloudChat(c,user.uid);
+   }
   }
+
   if(token!==authSwitchToken)return;
-  renderList();renderThread();setCloudStatus('Cloud connected');
+
+  renderList();
+  renderThread();
+  setCloudStatus('Google account connected — chats synced');
+
   cloudUnsubscribe=onSnapshot(cloudCollection(user.uid),snapshot=>{
    if(token!==authSwitchToken||!fbUser||fbUser.uid!==user.uid)return;
+
    let changed=false;
+
    for(const change of snapshot.docChanges()){
     const id=change.doc.id;
+
     if(change.type==='removed'){
      const ix=chats.findIndex(c=>c.id===id);
-     if(ix!==-1){chats.splice(ix,1);if(cur?.id===id)cur=null;changed=true}
+     if(ix!==-1){
+      chats.splice(ix,1);
+      if(cur?.id===id)cur=null;
+      changed=true;
+     }
      continue;
     }
+
     const remoteChat={...change.doc.data(),id};
-    const ix=chats.findIndex(c=>c.id===id),localChat=ix<0?null:chats[ix];
+    const ix=chats.findIndex(c=>c.id===id);
+    const localChat=ix<0?null:chats[ix];
+
     if(!localChat||Number(remoteChat.updatedAt||0)>Number(localChat.updatedAt||0)){
-     if(ix<0)chats.push(remoteChat);else chats[ix]=remoteChat;
+     if(ix<0)chats.push(remoteChat);
+     else chats[ix]=remoteChat;
+
      if(cur?.id===id)cur=chats.find(c=>c.id===id);
      changed=true;
     }
    }
-   if(changed){chats=chats.sort((a,b)=>Number(b.updatedAt||0)-Number(a.updatedAt||0)).slice(0,60);ls.s(accountCacheKey(user.uid),chats);renderList();renderThread()}
-  },e=>{console.error('Firestore listener:',e);setCloudStatus('Cloud connection interrupted — local copy kept')});
+
+   if(changed){
+    chats=chats.sort((a,b)=>Number(b.updatedAt||0)-Number(a.updatedAt||0)).slice(0,60);
+    ls.s(accountCacheKey(user.uid),chats);
+    renderList();
+    renderThread();
+   }
+  },e=>{
+   console.error('Firestore listener:',e);
+   setCloudStatus('Cloud connection interrupted — local copy kept');
+  });
+
  }catch(e){
   console.error('Parley Firebase:',e);
   if(token!==authSwitchToken)return;
-  cloudReady=false;chats=localFallbackForUser(user.uid);renderList();renderThread();
+
+  cloudReady=false;
+  chats=localFallbackForUser(user.uid);
+  renderList();
+  renderThread();
   setCloudStatus('Cloud unavailable — local copy kept');
  }
 }
-function localFallbackForUser(uid){const c=ls.g(accountCacheKey(uid),[]);return Array.isArray(c)?c:[]}
+
+function localFallbackForUser(uid){
+ const c=ls.g(accountCacheKey(uid),[]);
+ return Array.isArray(c)?c:[];
+}
+
+/* =========================================================
+   GOOGLE SIGN-IN
+   ========================================================= */
 accountBtn?.addEventListener('click',async()=>{
  try{
-  if(fbUser){if(!confirm('Sign out? Your cloud conversations will stay saved.'))return;await signOut(auth)}
-  else{setCloudStatus('Opening Google sign-in…');await signInWithRedirect(auth,googleProvider)}
- }catch(e){console.error('Google sign-in:',e);setCloudStatus('Sign-in failed');alert(e.message||'Google sign-in failed')}
+  if(fbUser){
+   if(!confirm('Sign out? Your cloud conversations will stay saved.'))return;
+   await signOut(auth);
+  }else{
+   setCloudStatus('Opening Google sign-in…');
+   await setPersistence(auth,browserLocalPersistence);
+   await signInWithRedirect(auth,googleProvider);
+  }
+ }catch(e){
+  console.error('Google sign-in:',e);
+  setCloudStatus('Sign-in failed: '+(e.code||e.message||'unknown error'));
+  alert(e.message||'Google sign-in failed');
+ }
 });
-onAuthStateChanged(auth,user=>{switchFirebaseUser(user)});
-getRedirectResult(auth).catch(e=>{console.error('Google redirect result:',e);setCloudStatus('Google sign-in could not be completed')});
+
+onAuthStateChanged(auth,user=>{
+ switchFirebaseUser(user);
+});
+
+getRedirectResult(auth).catch(e=>{
+ console.error('Google redirect result:',e);
+ setCloudStatus('Google sign-in could not be completed: '+(e.code||e.message||'unknown error'));
+});
+
+/* =========================================================
+   SAVE SYSTEM
+   ========================================================= */
 function save(){
  if(cur)cur.updatedAt=Date.now();
- if(fbUser){ls.s(accountCacheKey(fbUser.uid),chats.slice(0,60));if(cur)queueCloudSave(cur)}
- else{ls.s('pl.chats',chats.slice(0,60));guestChats=[...chats]}
+
+ if(fbUser){
+  ls.s(accountCacheKey(fbUser.uid),chats.slice(0,60));
+  if(cur)queueCloudSave(cur);
+ }else{
+  ls.s('pl.chats',chats.slice(0,60));
+  guestChats=[...chats];
+ }
 }
-const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const inp=$('#in'),go=$('#go'),sc=$('#scroll'),th=$('#thread');
 
-/* markdown */
-function inline(s){const c=[];s=s.replace(/`([^`]+)`/g,(_,x)=>'\0'+(c.push(x)-1)+'\0');
- s=s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/(^|[^*\w])\*([^*\n]+)\*/g,'$1<em>$2</em>').replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
- return s.replace(/\0(\d+)\0/g,(_,i)=>'<code>'+c[i]+'</code>')}
-function blocks(t){const L=t.split('\n');let h='',i=0;
- while(i<L.length){const l=L[i];if(!l.trim()){i++;continue}let m;
-  if(m=l.match(/^(#{1,4})\s+(.*)/)){const n=m[1].length+1;h+=`<h${n}>${inline(m[2])}</h${n}>`;i++}
-  else if(/^\s*[-*]\s+/.test(l)||/^\s*\d+[.)]\s+/.test(l)){const ol=/^\s*\d/.test(l),re=ol?/^\s*\d+[.)]\s+/:/^\s*[-*]\s+/;let it='';
-   while(i<L.length&&re.test(L[i])){it+='<li>'+inline(L[i].replace(re,''))+'</li>';i++}h+=ol?`<ol>${it}</ol>`:`<ul>${it}</ul>`}
-  else if(/^&gt;/.test(l)){const q=[];while(i<L.length&&/^&gt;/.test(L[i])){q.push(L[i].replace(/^&gt;\s?/,''));i++}h+=`<blockquote>${inline(q.join('<br>'))}</blockquote>`}
-  else if(l.includes('|')&&/^\s*\|?\s*:?-{2,}/.test(L[i+1]||'')){const row=r=>r.trim().replace(/^\||\|$/g,'').split('|').map(c=>inline(c.trim())),hd=row(l);i+=2;let b='';
-   while(i<L.length&&L[i].trim()&&L[i].includes('|')){b+='<tr>'+row(L[i]).map(c=>`<td>${c}</td>`).join('')+'</tr>';i++}
-   h+=`<div class="tw"><table><thead><tr>${hd.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${b}</tbody></table></div>`}
-  else if(/^\s*(-{3,}|\*{3,})\s*$/.test(l)){h+='<hr>';i++}
-  else{const p=[L[i++]];while(i<L.length&&L[i].trim()&&!/^(#{1,4}\s|\s*[-*]\s|\s*\d+[.)]\s|&gt;)/.test(L[i])&&!L[i].includes('|'))p.push(L[i++]);h+=`<p>${inline(p.join('<br>'))}</p>`}}
- return h}
-function md(src){return src.split('```').map((p,i)=>{
- if(i%2){const n=p.indexOf('\n'),lang=(n<0?p:p.slice(0,n)).trim(),code=n<0?'':p.slice(n+1).replace(/\n$/,'');
-  return `<div class="code"><div class="ch"><span>${esc(lang||'code')}</span><button data-copy>Copy</button></div><pre><code>${esc(code)}</code></pre></div>`}
- return blocks(esc(p))}).join('')}
+/* =========================================================
+   MARKDOWN RENDERER
+   ========================================================= */
+function inline(s){
+ const c=[];
+ s=s.replace(/`([^`]+)`/g,(_,x)=>'\0'+(c.push(x)-1)+'\0');
+ s=s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+  .replace(/(^|[^*\w])\*([^*\n]+)\*/g,'$1<em>$2</em>')
+  .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+ return s.replace(/\0(\d+)\0/g,(_,i)=>'<code>'+c[i]+'</code>');
+}
 
-/* views */
-const SUG=[['Explain something','How do black holes work?'],['Do the math','What is 18% of 2450?'],['Look someone up','Who was Ada Lovelace?'],['Convert units','Convert 72 °F to Celsius']];
-const greet=()=>{const h=new Date().getHours();return h<5?'Still up?':h<12?'Good morning.':h<18?'Good afternoon.':'Good evening.'};
-function renderList(){$('#list').innerHTML=chats.length?chats.map(c=>`<div class="it${c===cur?' on':''}" data-id="${c.id}"><span>${esc(c.title)}</span><button data-del aria-label="Delete chat">${ic('trash')}</button></div>`).join(''):'<div class="none">Your chats will show up here.</div>'}
+function blocks(t){
+ const L=t.split('\n');
+ let h='',i=0;
+
+ while(i<L.length){
+  const l=L[i];
+  if(!l.trim()){i++;continue}
+  let m;
+
+  if(m=l.match(/^(#{1,4})\s+(.*)/)){
+   const n=m[1].length+1;
+   h+=`<h${n}>${inline(m[2])}</h${n}>`;
+   i++;
+  }
+  else if(/^\s*[-*]\s+/.test(l)||/^\s*\d+[.)]\s+/.test(l)){
+   const ol=/^\s*\d/.test(l);
+   const re=ol?/^\s*\d+[.)]\s+/:/^\s*[-*]\s+/;
+   let it='';
+   while(i<L.length&&re.test(L[i])){
+    it+='<li>'+inline(L[i].replace(re,''))+'</li>';
+    i++;
+   }
+   h+=ol?`<ol>${it}</ol>`:`<ul>${it}</ul>`;
+  }
+  else if(/^&gt;/.test(l)){
+   const q=[];
+   while(i<L.length&&/^&gt;/.test(L[i])){
+    q.push(L[i].replace(/^&gt;\s?/,''));i++;
+   }
+   h+=`<blockquote>${inline(q.join('<br>'))}</blockquote>`;
+  }
+  else if(l.includes('|')&&/^\s*\|?\s*:?-{2,}/.test(L[i+1]||'')){
+   const row=r=>r.trim().replace(/^\||\|$/g,'').split('|').map(c=>inline(c.trim()));
+   const hd=row(l);
+   i+=2;
+   let b='';
+   while(i<L.length&&L[i].trim()&&L[i].includes('|')){
+    b+='<tr>'+row(L[i]).map(c=>`<td>${c}</td>`).join('')+'</tr>';
+    i++;
+   }
+   h+=`<div class="tw"><table><thead><tr>${hd.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${b}</tbody></table></div>`;
+  }
+  else if(/^\s*(-{3,}|\*{3,})\s*$/.test(l)){
+   h+='<hr>';i++;
+  }
+  else{
+   const p=[L[i++]];
+   while(i<L.length&&L[i].trim()&&!/^(#{1,4}\s|\s*[-*]\s|\s*\d+[.)]\s|&gt;)/.test(L[i])&&!L[i].includes('|')){
+    p.push(L[i++]);
+   }
+   h+=`<p>${inline(p.join('<br>'))}</p>`;
+  }
+ }
+ return h;
+}
+
+function md(src){
+ return src.split('```').map((p,i)=>{
+  if(i%2){
+   const n=p.indexOf('\n');
+   const lang=(n<0?p:p.slice(0,n)).trim();
+   const code=n<0?'':p.slice(n+1).replace(/\n$/,'');
+   return `<div class="code"><div class="ch"><span>${esc(lang||'code')}</span><button data-copy>Copy</button></div><pre><code>${esc(code)}</code></pre></div>`;
+  }
+  return blocks(esc(p));
+ }).join('');
+}
+
+/* =========================================================
+   CHAT VIEWS
+   ========================================================= */
+const SUG=[
+ ['Explain something','How do black holes work?'],
+ ['Do the math','What is 18% of 2450?'],
+ ['Look something up','Who was Ada Lovelace?'],
+ ['Convert units','Convert 72 °F to Celsius']
+];
+
+const greet=()=>{
+ const h=new Date().getHours();
+ return h<5?'Still up?':h<12?'Good morning.':h<18?'Good afternoon.':'Good evening.';
+};
+
+function renderList(){
+ $('#list').innerHTML=chats.length?
+ chats.map(c=>`<div class="it${c===cur?' on':''}" data-id="${esc(c.id)}"><span>${esc(c.title)}</span><button data-del aria-label="Delete chat">${ic('trash')}</button></div>`).join(''):
+ '<div class="none">Your chats will show up here.</div>';
+}
+
 function msgHTML(m,i,last){
- if(m.role==='user')return `<div class="msg u"><div class="bub">${esc(m.content).replace(/\n/g,'<br>')}</div></div>`;
- const b=(m.content?md(m.content):'')+(m.error?`<div class="err">${esc(m.error)}<button data-act="retry">Try again</button></div>`:'')||'<span class="dots"><b></b><b></b><b></b></span>';
- const t=m.content&&!(busy&&last)?`<div class="tools"><button class="ib" data-act="copy" data-n="${i}" aria-label="Copy reply">${ic('copy')}</button>${last?`<button class="ib" data-act="regen" aria-label="Regenerate reply">${ic('ref')}</button>`:''}</div>`:'';
- const r=m.src?.length?`<div class="src">${m.src.map((x,i)=>`<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${i+1}. ${esc(x.title)}</a>`).join('')}</div>`:'';
- return `<div class="msg"><div class="body">${b}</div>${r}${t}</div>`}
-function renderThread(){const ms=cur?cur.msgs:[];$('#title').textContent=cur?cur.title:'New chat';
- th.innerHTML=ms.length?ms.map((m,i)=>msgHTML(m,i,i===ms.length-1)).join(''):`<div class="hero"><h2>${greet()}</h2><p>Ask a question, run a calculation, or convert a unit.</p><div class="sug">${SUG.map(([a,b],i)=>`<button data-s="${i}"><b>${a}</b><small>${b}</small></button>`).join('')}</div></div>`;
- follow()}
+ if(m.role==='user'){
+  return `<div class="msg u"><div class="bub">${esc(m.content).replace(/\n/g,'<br>')}</div></div>`;
+ }
+
+ const b=(m.content?md(m.content):'')+
+ (m.error?`<div class="err">${esc(m.error)}<button data-act="retry">Try again</button></div>`:'')||
+ '<span class="dots"><b></b><b></b><b></b></span>';
+
+ const t=m.content&&!(busy&&last)?
+ `<div class="tools"><button class="ib" data-act="copy" data-n="${i}" aria-label="Copy reply">${ic('copy')}</button>${last?`<button class="ib" data-act="regen" aria-label="Regenerate reply">${ic('ref')}</button>`:''}</div>`:'';
+
+ const r=m.src?.length?
+ `<div class="src">${m.src.map((x,i)=>`<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${i+1}. ${esc(x.title)}</a>`).join('')}</div>`:'';
+
+ return `<div class="msg"><div class="body">${b}</div>${r}${t}</div>`;
+}
+
+function renderThread(){
+ const ms=cur?cur.msgs:[];
+ $('#title').textContent=cur?cur.title:'New chat';
+
+ th.innerHTML=ms.length?
+ ms.map((m,i)=>msgHTML(m,i,i===ms.length-1)).join(''):
+ `<div class="hero"><h2>${greet()}</h2><p>I'm ${esc(PARLEY_IDENTITY.name)}. What would you like to explore?</p><div class="sug">${SUG.map(([a,b],i)=>`<button data-s="${i}"><b>${a}</b><small>${b}</small></button>`).join('')}</div></div>`;
+
+ follow();
+}
+
 const follow=()=>{if(stick)sc.scrollTop=sc.scrollHeight};
 sc.addEventListener('scroll',()=>{stick=sc.scrollHeight-sc.scrollTop-sc.clientHeight<90});
-function setBusy(){go.innerHTML=ic(busy?'stop':'up');go.disabled=!busy&&!inp.value.trim();go.setAttribute('aria-label',busy?'Stop':'Send')}
 
-/* chat */
-const errText=e=>{const x=e?.error??e;return 'Couldn’t get a reply: '+(typeof x==='string'?x:x?.message||x?.msg||e?.message||'the request failed')+'. Try again, or pick another model.'};
-async function send(text){if(busy||!text.trim())return;
- if(!cur){cur={id:uid(),title:text.trim().slice(0,50),msgs:[]};chats.unshift(cur);renderList()}
- cur.msgs.push({role:'user',content:text.trim()});save();stick=true;await reply()}
+function setBusy(){
+ go.innerHTML=ic(busy?'stop':'up');
+ go.disabled=!busy&&!inp.value.trim();
+ go.setAttribute('aria-label',busy?'Stop':'Send');
+}
+
+/* =========================================================
+   CHAT / AI REQUESTS
+   ========================================================= */
+const errText=e=>{
+ const x=e?.error??e;
+ return 'Couldn’t get a reply: '+(typeof x==='string'?x:x?.message||x?.msg||e?.message||'the request failed')+'. Try again, or pick another model.';
+};
+
+async function send(text){
+ if(busy||!text.trim())return;
+
+ if(!cur){
+  cur={id:uid(),title:text.trim().slice(0,50),msgs:[],updatedAt:Date.now()};
+  chats.unshift(cur);
+  renderList();
+ }
+
+ cur.msgs.push({role:'user',content:text.trim()});
+ save();
+ stick=true;
+ await reply();
+}
+
 let FREE=[['openai','OpenAI']];
-const stat=(e,t)=>{if(e)e.innerHTML=`<div class="stat"><span class="dots"><b></b><b></b><b></b></span>${esc(t)}</div>`};
+
+const stat=(e,t)=>{
+ if(e)e.innerHTML=`<div class="stat"><span class="dots"><b></b><b></b><b></b></span>${esc(t)}</div>`;
+};
+
 async function wiki(q){
- const r=await fetch('https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=3&prop=extracts|info&inprop=url&exintro=1&explaintext=1&exchars=800&format=json&origin=*&gsrsearch='+encodeURIComponent(q),{signal:AbortSignal.timeout?.(8000)});
+ const r=await fetch(
+  'https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=3&prop=extracts|info&inprop=url&exintro=1&explaintext=1&exchars=800&format=json&origin=*&gsrsearch='+encodeURIComponent(q),
+  {signal:AbortSignal.timeout?.(8000)}
+ );
  const j=await r.json();
- return Object.values(j.query?.pages||{}).sort((a,b)=>a.index-b.index).filter(p=>p.extract).map(p=>({title:p.title,url:p.fullurl,text:p.extract}))}
+ return Object.values(j.query?.pages||{}).sort((a,b)=>a.index-b.index).filter(p=>p.extract).map(p=>({title:p.title,url:p.fullurl,text:p.extract}));
+}
+
 const POLL='https://text.pollinations.ai/openai';
-const PERSONA=`You are Parley AI, the assistant inside the Parley application.
-Your conversational identity and name are Parley AI (also called Parley Mind).
-Be friendly, curious, clear, and helpful. You are part of the Parley family.
-Do not introduce yourself as ChatGPT, GPT-4, Claude, Gemini, or another product name.
-Do not claim to be a different underlying model. If asked which model powers you, explain that Parley uses an AI model through its server and that you may not have reliable visibility into its exact technical model identity.
-Never invent capabilities, memories, or facts. Say when you are unsure.`;
-const MIND_URL='https://parley-mind.leolam6367.workers.dev'; // Parley Cloudflare Worker
+const MIND_URL='https://parley-mind.leolam6367.workers.dev';
 const mindUrl=()=>(cfg.mindUrl||MIND_URL).trim().replace(/\/+$/,'');
+
 async function chatFree(url,model,messages,stream,ab,ms){
- const to=ms?setTimeout(()=>ab.abort(),ms):0;let r;
- try{r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(url===POLL?{model,messages,stream,private:true}:{model,messages,stream}),signal:ab.signal})}
- catch(e){if(e.name==='AbortError')throw e;throw new Error('couldn’t reach the AI service. Check your connection or turn off the ad blocker')}
- finally{clearTimeout(to)}
- if(!r.ok){let d='';try{d=(await r.text()).replace(/\s+/g,' ').slice(0,140)}catch{}throw new Error(r.status===429?'the free service is busy. Wait a few seconds':'the service returned '+r.status+(d?' ('+d+')':''))}
- return r}
+ const to=ms?setTimeout(()=>ab.abort(),ms):0;
+ let r;
+
+ try{
+  r=await fetch(url,{
+   method:'POST',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify(url===POLL?{model,messages,stream,private:true}:{model,messages,stream}),
+   signal:ab.signal
+  });
+ }catch(e){
+  if(e.name==='AbortError')throw e;
+  throw new Error('couldn’t reach the AI service. Check your connection or turn off the ad blocker');
+ }finally{
+  clearTimeout(to);
+ }
+
+ if(!r.ok){
+  let d='';
+  try{d=(await r.text()).replace(/\s+/g,' ').slice(0,140)}catch{}
+  throw new Error(r.status===429?'the free service is busy. Wait a few seconds':'the service returned '+r.status+(d?' ('+d+')':''));
+ }
+ return r;
+}
+
 async function* sse(r,c){
- if(!(r.headers.get('content-type')||'').includes('event-stream')){const j=await r.json();yield j.choices?.[0]?.message?.content||'';return}
- const rd=r.body.getReader(),dec=new TextDecoder();let buf='';
- while(true){const{done,value}=await rd.read();if(done||c.stop){try{rd.cancel()}catch{}return}
-  buf+=dec.decode(value,{stream:true});const parts=buf.split('\n');buf=parts.pop();
-  for(const l of parts){if(!l.startsWith('data:'))continue;const d=l.slice(5).trim();if(d==='[DONE]')return;try{const o=JSON.parse(d),t=o.choices?.[0]?.delta?.content??o.response;if(t)yield t}catch{}}}}
-/* Parley Mind: built-in search-and-answer engine (no model, no download) */
+ if(!(r.headers.get('content-type')||'').includes('event-stream')){
+  const j=await r.json();
+  yield j.choices?.[0]?.message?.content||'';
+  return;
+ }
+
+ const rd=r.body.getReader(),dec=new TextDecoder();
+ let buf='';
+
+ while(true){
+  const{done,value}=await rd.read();
+  if(done||c.stop){
+   try{rd.cancel()}catch{}
+   return;
+  }
+
+  buf+=dec.decode(value,{stream:true});
+  const parts=buf.split('\n');
+  buf=parts.pop();
+
+  for(const l of parts){
+   if(!l.startsWith('data:'))continue;
+   const d=l.slice(5).trim();
+   if(d==='[DONE]')return;
+   try{
+    const o=JSON.parse(d),t=o.choices?.[0]?.delta?.content??o.response;
+    if(t)yield t;
+   }catch{}
+  }
+ }
+}
+
+/* =========================================================
+   PARLEY MIND — BUILT-IN SEARCH / ANSWER ENGINE
+   ========================================================= */
 const STOP=new Set('a an the is are was were be been of in on at to for from by with and or but as it its this that these those what who whom whose which when where why how does do did can could should would will about tell me please explain describe define give some any more know i you your my there their them they he she his her him go continue'.split(' '));
-const words=t=>t.toLowerCase().match(/[a-z0-9]+/g)||[],stem=w=>w.replace(/(ing|ed|es|s)$/,'');
+
+const words=t=>t.toLowerCase().match(/[a-z0-9]+/g)||[];
+const stem=w=>w.replace(/(ing|ed|es|s)$/,'');
 const fmt=v=>Number(v.toPrecision(10)).toLocaleString('en-US',{maximumFractionDigits:6});
-function calc(src){const t=src.match(/\d*\.?\d+|\*\*|[-+*/()%]|[a-z]+/g)||[];let i=0;
- const F={sqrt:Math.sqrt,sin:Math.sin,cos:Math.cos,tan:Math.tan,log:Math.log10,ln:Math.log,abs:Math.abs},C={pi:Math.PI,e:Math.E};
- const prim=()=>{const x=t[i++];if(x==='('){const v=add();i++;return v}if(x==='-')return-pow();if(x==='+')return pow();if(Object.hasOwn(F,x))return F[x](prim());if(Object.hasOwn(C,x))return C[x];const n=parseFloat(x);if(isNaN(n))throw 0;return n};
+
+function calc(src){
+ const t=src.match(/\d*\.?\d+|\*\*|[-+*/()%]|[a-z]+/g)||[];
+ let i=0;
+ const F={sqrt:Math.sqrt,sin:Math.sin,cos:Math.cos,tan:Math.tan,log:Math.log10,ln:Math.log,abs:Math.abs};
+ const C={pi:Math.PI,e:Math.E};
+
+ const prim=()=>{
+  const x=t[i++];
+  if(x==='('){const v=add();i++;return v}
+  if(x==='-')return-pow();
+  if(x==='+')return pow();
+  if(Object.hasOwn(F,x))return F[x](prim());
+  if(Object.hasOwn(C,x))return C[x];
+  const n=parseFloat(x);
+  if(isNaN(n))throw 0;
+  return n;
+ };
+
  const pow=()=>{const b=prim();return t[i]==='**'?(i++,b**pow()):b};
  const mul=()=>{let v=pow();while(t[i]==='*'||t[i]==='/'||t[i]==='%'){const o=t[i++],r=pow();v=o==='*'?v*r:o==='/'?v/r:v%r}return v};
  const add=()=>{let v=mul();while(t[i]==='+'||t[i]==='-'){const o=t[i++],r=mul();v=o==='+'?v+r:v-r}return v};
- const v=add();if(i<t.length||!isFinite(v))throw 0;return v}
+
+ const v=add();
+ if(i<t.length||!isFinite(v))throw 0;
+ return v;
+}
+
 function tryMath(q){
- const s=q.toLowerCase().replace(/^(what(?:'s|’s| is)|calculate|compute|solve|evaluate|how much is)\s+/,'').replace(/[?=.\s]+$/,'').replace(/(\d),(?=\d{3}\b)/g,'$1').replace(/(\d[\d.]*)\s*%\s*of\s*(\d[\d.]*)/g,'($1/100*$2)').replace(/square root of\s*([\d.]+)/g,'sqrt($1)').replace(/[×x](?=\s*[\d(])/g,'*').replace(/÷/g,'/').replace(/\^/g,'**');
+ const s=q.toLowerCase()
+ .replace(/^(what(?:'s|’s| is)|calculate|compute|solve|evaluate|how much is)\s+/,'')
+ .replace(/[?=.\s]+$/,'')
+ .replace(/(\d),(?=\d{3}\b)/g,'$1')
+ .replace(/(\d[\d.]*)\s*%\s*of\s*(\d[\d.]*)/g,'($1/100*$2)')
+ .replace(/square root of\s*([\d.]+)/g,'sqrt($1)')
+ .replace(/[×x](?=\s*[\d(])/g,'*')
+ .replace(/÷/g,'/')
+ .replace(/\^/g,'**');
+
  if(!/\d/.test(s)||s.replace(/sqrt|sin|cos|tan|log|ln|abs|pi|e/g,'').replace(/[\d\s+\-*/().%]/g,''))return null;
- try{return `**${fmt(calc(s))}**`}catch{return null}}
-const U={len:{km:1e3,kilometer:1e3,kilometre:1e3,m:1,meter:1,metre:1,cm:.01,mm:.001,mi:1609.344,mile:1609.344,ft:.3048,foot:.3048,feet:.3048,in:.0254,inch:.0254,yd:.9144,yard:.9144},mass:{kg:1,kilogram:1,g:.001,gram:.001,lb:.45359237,pound:.45359237,oz:.028349523,ounce:.028349523,t:1e3,tonne:1e3},vol:{l:1,liter:1,litre:1,ml:.001,gal:3.785411784,gallon:3.785411784,cup:.2365882365}},TEMP={c:'c',celsius:'c',f:'f',fahrenheit:'f',k:'k',kelvin:'k'};
+ try{return `**${fmt(calc(s))}**`}catch{return null}
+}
+
+const U={
+ len:{km:1e3,kilometer:1e3,kilometre:1e3,m:1,meter:1,metre:1,cm:.01,mm:.001,mi:1609.344,mile:1609.344,ft:.3048,foot:.3048,feet:.3048,in:.0254,inch:.0254,yd:.9144,yard:.9144},
+ mass:{kg:1,kilogram:1,g:.001,gram:.001,lb:.45359237,pound:.45359237,oz:.028349523,ounce:.028349523,t:1e3,tonne:1e3},
+ vol:{l:1,liter:1,litre:1,ml:.001,gal:3.785411784,gallon:3.785411784,cup:.2365882365}
+};
+
+const TEMP={c:'c',celsius:'c',f:'f',fahrenheit:'f',k:'k',kelvin:'k'};
+
 function tryConvert(q){
- const m=q.toLowerCase().match(/(-?\d[\d,.]*)\s*(?:degrees?\s*)?°?\s*([a-z]+)\s+(?:to|in|into|as)\s+(?:degrees?\s*)?°?\s*([a-z]+)\s*\??$/);if(!m)return null;
- const n=parseFloat(m[1].replace(/,/g,'')),a=m[2],b=m[3],nm=u=>[u,u.replace(/s$/,''),u.replace(/es$/,'')],ta=Object.hasOwn(TEMP,a)&&TEMP[a],tb=Object.hasOwn(TEMP,b)&&TEMP[b];
- if(ta&&tb){const k=ta==='c'?n+273.15:ta==='f'?(n-32)*5/9+273.15:n,r=tb==='c'?k-273.15:tb==='f'?(k-273.15)*9/5+32:k;return `**${fmt(n)} °${ta.toUpperCase()} = ${fmt(r)} °${tb.toUpperCase()}**`}
- for(const t of Object.values(U)){const f=nm(a).find(x=>Object.hasOwn(t,x)),g=nm(b).find(x=>Object.hasOwn(t,x));if(f&&g)return `**${fmt(n)} ${a} = ${fmt(n*t[f]/t[g])} ${b}**`}
- return null}
+ const m=q.toLowerCase().match(/(-?\d[\d,.]*)\s*(?:degrees?\s*)?°?\s*([a-z]+)\s+(?:to|in|into|as)\s+(?:degrees?\s*)?°?\s*([a-z]+)\s*\??$/);
+ if(!m)return null;
+
+ const n=parseFloat(m[1].replace(/,/g,'')),a=m[2],b=m[3];
+ const nm=u=>[u,u.replace(/s$/,''),u.replace(/es$/,'')];
+ const ta=Object.hasOwn(TEMP,a)&&TEMP[a],tb=Object.hasOwn(TEMP,b)&&TEMP[b];
+
+ if(ta&&tb){
+  const k=ta==='c'?n+273.15:ta==='f'?(n-32)*5/9+273.15:n;
+  const r=tb==='c'?k-273.15:tb==='f'?(k-273.15)*9/5+32:k;
+  return `**${fmt(n)} °${ta.toUpperCase()} = ${fmt(r)} °${tb.toUpperCase()}**`;
+ }
+
+ for(const t of Object.values(U)){
+  const f=nm(a).find(x=>Object.hasOwn(t,x));
+  const g=nm(b).find(x=>Object.hasOwn(t,x));
+  if(f&&g)return `**${fmt(n)} ${a} = ${fmt(n*t[f]/t[g])} ${b}**`;
+ }
+ return null;
+}
+
 const sents=t=>t.replace(/\s*\([^()]*[ˈˌ/][^()]*\)/g,'').replace(/\[\d+\]/g,'').replace(/\s+/g,' ').trim().split(/(?<=[.!?])\s+(?=[A-Z0-9"“(])/).filter(x=>x.length>25&&x.length<420);
-async function wp(q){const r=await fetch('https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=5&prop=extracts|info&inprop=url&exintro=1&explaintext=1&exchars=3000&format=json&origin=*&gsrsearch='+encodeURIComponent(q),{signal:AbortSignal.timeout?.(9000)});const j=await r.json();
- return Object.values(j.query?.pages||{}).sort((a,b)=>a.index-b.index).filter(p=>p.extract&&!/may refer to/i.test(p.extract.slice(0,200)))}
+
+async function wp(q){
+ const r=await fetch(
+  'https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=5&prop=extracts|info&inprop=url&exintro=1&explaintext=1&exchars=3000&format=json&origin=*&gsrsearch='+encodeURIComponent(q),
+  {signal:AbortSignal.timeout?.(9000)}
+ );
+ const j=await r.json();
+ return Object.values(j.query?.pages||{}).sort((a,b)=>a.index-b.index).filter(p=>p.extract&&!/may refer to/i.test(p.extract.slice(0,200)));
+}
+
 async function mind(chat,say){
- const ms=chat.msgs,q=ms[ms.length-2].content.trim(),ql=q.toLowerCase(),raw=ql.replace(/[?!.]+$/,'');let r;
+ const ms=chat.msgs;
+ const q=ms[ms.length-2].content.trim();
+ const ql=q.toLowerCase();
+ const raw=ql.replace(/[?!.]+$/,'');
+ let r;
+
  if(r=tryMath(q)||tryConvert(q))return{text:r};
- if(/^(what('s|’s| is)( the)? )?(current )?(time|date|day)( is it| today| now)?$|what (day|time) is it|today'?s date/.test(raw))return{text:'It’s '+new Date().toLocaleString(undefined,{dateStyle:'full',timeStyle:'short'})+'.'};
- if(/^(hi|hello|hey|yo|hola|good (morning|afternoon|evening))\b/.test(raw)&&raw.length<25)return{text:'Hi! Ask me a question, give me something to calculate, or convert a unit.'};
- if(/\b(who|what) are you|your name|are you (an? )?(ai|llm|bot|human|chatgpt|gpt)/.test(raw))return{text:'I’m **Parley Mind**, a search-and-answer engine written for this page. I’m not a large language model. I search Wikipedia live, pick the sentences that best answer your question, and do maths and unit conversions myself. For writing or coding, pick a Cloud model in the menu.'};
- if(/^(thanks|thank you|thx|ty)\b/.test(raw))return{text:'Anytime.'};
- if(/^(please |can you |could you )?(write|draft|compose|generate|translate|rewrite|make me|create)\b/.test(raw))return{text:'I can’t write or generate new text. I look things up, do maths and convert units. Pick a Cloud model in the menu for writing and coding.'};
- const core=words(raw).filter(w=>!STOP.has(w)),prior=[...ms].reverse().find(x=>x.topic)?.topic,
-  fol=prior&&(core.length<3||/\b(it|its|he|she|his|her|they|them|their|this|that|these|those)\b/.test(raw)||/^(more|go on|continue|and )/.test(raw));
+
+ if(/^(what('s|’s| is)( the)? )?(current )?(time|date|day)( is it| today| now)?$|what (day|time) is it|today'?s date/.test(raw)){
+  return{text:'It’s '+new Date().toLocaleString(undefined,{dateStyle:'full',timeStyle:'short'})+'.'};
+ }
+
+ if(/^(hi|hello|hey|yo|hola|good (morning|afternoon|evening))\b/.test(raw)&&raw.length<25){
+  return{text:`Hi! I'm ${PARLEY_IDENTITY.name}, but you can call me ${getNickname()}. What would you like to explore?`};
+ }
+
+ if(/\b(who are you|what are you|your name|are you (an? )?(ai|llm|bot|human|chatgpt|gpt))\b/.test(raw)){
+  return{
+   text:`I'm **${PARLEY_IDENTITY.name}**, but you can call me **${getNickname()}**. I'm the built-in search-and-answer engine in the Parley application. I can look up information, do maths, and convert units. For writing, coding, and more advanced conversations, choose an online model from the model menu.`
+  };
+ }
+
+ if(/^(thanks|thank you|thx|ty)\b/.test(raw)){
+  return{text:'Anytime.'};
+ }
+
+ if(/^(please |can you |could you )?(write|draft|compose|generate|translate|rewrite|make me|create)\b/.test(raw)){
+  return{text:'I can look things up, do maths, and convert units. For writing and coding, choose an online model from the model menu.'};
+ }
+
+ const core=words(raw).filter(w=>!STOP.has(w));
+ const prior=[...ms].reverse().find(x=>x.topic)?.topic;
+ const fol=prior&&(core.length<3||/\b(it|its|he|she|his|her|they|them|their|this|that|these|those)\b/.test(raw)||/^(more|go on|continue|and )/.test(raw));
+
  say('Searching Wikipedia…');
- const lists=await Promise.all([wp((fol?[prior,...core]:core).join(' ')||raw),wp(fol?prior+' '+raw:raw)].map(p=>p.catch(()=>[]))),pg=new Map();
- lists.forEach(l=>l.forEach((p,i)=>{const e=pg.get(p.pageid)||Object.assign({rank:0},p);e.rank+=1/(i+2);pg.set(p.pageid,e)}));
+
+ const lists=await Promise.all([
+  wp((fol?[prior,...core]:core).join(' ')||raw),
+  wp(fol?prior+' '+raw:raw)
+ ].map(p=>p.catch(()=>[])));
+
+ const pg=new Map();
+ lists.forEach(l=>l.forEach((p,i)=>{
+  const e=pg.get(p.pageid)||Object.assign({rank:0},p);
+  e.rank+=1/(i+2);
+  pg.set(p.pageid,e);
+ }));
+
  const top=[...pg.values()].sort((a,b)=>b.rank-a.rank).slice(0,3);
- if(!top.length)return{text:'I couldn’t find anything on that. Try different wording, or pick a Cloud model in the menu.',topic:prior};
+
+ if(!top.length){
+  return{text:'I couldn’t find anything on that. Try different wording, or pick an online model for deeper analysis.',topic:prior};
+ }
+
  say('Reading '+top.length+' articles…');
- const cs=[...new Set((fol?[prior,...core]:core).flatMap(words).map(stem))],cand=[];
+
+ const cs=[...new Set((fol?[prior,...core]:core).flatMap(words).map(stem))];
+ const cand=[];
+
  top.forEach((p,pi)=>sents(p.extract).forEach((s,si)=>cand.push({s,pi,si,t:new Set(words(s).map(stem))})));
- const wt=Object.fromEntries(cs.map(t=>[t,Math.log(2+cand.length/(1+cand.filter(c=>c.t.has(t)).length))])),tot=cs.reduce((a,t)=>a+wt[t],0)||1,used=chat.used||[];
- cand.forEach(c=>{let v=cs.reduce((a,t)=>a+(c.t.has(t)?wt[t]:0),0)/tot;
+
+ const wt=Object.fromEntries(cs.map(t=>[
+  t,Math.log(2+cand.length/(1+cand.filter(c=>c.t.has(t)).length))
+ ]));
+ const tot=cs.reduce((a,t)=>a+wt[t],0)||1;
+ const used=chat.used||[];
+
+ cand.forEach(c=>{
+  let v=cs.reduce((a,t)=>a+(c.t.has(t)?wt[t]:0),0)/tot;
   v+=(c.si===0?.3:c.si===1?.12:0)/(1+c.pi)+.25/(c.pi+1);
+
   if(/^(when|what year)/.test(raw)&&/\b(1[0-9]{3}|20[0-9]{2})\b/.test(c.s))v+=.25;
   if(/^how (many|much|old|tall|long|far|big)/.test(raw)&&/\d/.test(c.s))v+=.2;
   if(/^(who|what)\b/.test(raw)&&c.si<2&&/\b(is|was|are|were|refers to)\b/.test(c.s.slice(0,160)))v+=.15;
   if(/^(why|how)\b/.test(raw)&&/\b(because|due to|caused|process|result|when|which|by)\b/.test(c.s))v+=.12;
-  c.v=used.includes(c.s)?-1:v});
+
+  c.v=used.includes(c.s)?-1:v;
+ });
+
  const rk=cand.filter(c=>c.v>0).sort((a,b)=>b.v-a.v);
- if(!rk.length)return{text:'That’s everything I have on that topic. Ask something new, or pick a Cloud model for deeper analysis.',topic:prior};
- const best=rk[0],pick=rk.filter(c=>c.v>=best.v*.55).slice(0,4).sort((a,b)=>a.pi-b.pi||a.si-b.si),order=[...new Set(pick.map(c=>c.pi))];
+
+ if(!rk.length){
+  return{text:'That’s everything I have on that topic. Ask something new, or pick an online model for deeper analysis.',topic:prior};
+ }
+
+ const best=rk[0];
+ const pick=rk.filter(c=>c.v>=best.v*.55).slice(0,4).sort((a,b)=>a.pi-b.pi||a.si-b.si);
+ const order=[...new Set(pick.map(c=>c.pi))];
+
  pick.forEach(c=>used.push(c.s));
- return{text:(best.v<.3?'I’m not certain this answers it, but this is the closest I found:\n\n':'')+order.map((pi,n)=>pick.filter(c=>c.pi===pi).map(c=>c.s).join(' ')+` [${n+1}]`).join('\n\n'),src:order.map(i=>({title:top[i].title,url:top[i].fullurl})),topic:top[best.pi].title}}
+
+ return{
+  text:(best.v<.3?'I’m not certain this answers it, but this is the closest I found:\n\n':'')+
+  order.map((pi,n)=>pick.filter(c=>c.pi===pi).map(c=>c.s).join(' ')+` [${n+1}]`).join('\n\n'),
+  src:order.map(i=>({title:top[i].title,url:top[i].fullurl})),
+  topic:top[best.pi].title
+ };
+}
+
+/* =========================================================
+   RESPONSE ENGINE
+   ========================================================= */
 async function reply(){
- const chat=cur,m={role:'assistant',content:''},c=ctl={stop:false,done:false,ab:new AbortController()};
- chat.msgs.push(m);busy=true;stick=true;renderThread();setBusy();
+ const chat=cur;
+ const m={role:'assistant',content:''};
+ const c=ctl={stop:false,done:false,ab:new AbortController()};
+
+ chat.msgs.push(m);
+ busy=true;
+ stick=true;
+ renderThread();
+ setBusy();
+
  const el=()=>cur===chat?th.querySelector('.msg:last-child .body'):null;
- const push=t=>{m.content+=t;const e=el();if(e){e.innerHTML=md(m.content);follow()}};
- c.fin=()=>{if(c.done)return;c.done=true;busy=false;const k=chat.msgs.indexOf(m);if(k>=0&&!m.content&&!m.error)chat.msgs.splice(k,1);save();if(cur===chat)renderThread();renderList();setBusy()};
- const llm=async(url,model,useWeb,persona,ms)=>{
-  const hist=chat.msgs.slice(-13,-1).filter(x=>x.content),last=hist[hist.length-1].content,day=new Date().toDateString();
-  const core=words(last.toLowerCase()).filter(w=>!STOP.has(w)).slice(0,8);let web='';
+
+ const push=t=>{
+  m.content+=t;
+  const e=el();
+  if(e){
+   e.innerHTML=md(m.content);
+   follow();
+  }
+ };
+
+ c.fin=()=>{
+  if(c.done)return;
+  c.done=true;
+  busy=false;
+
+  const k=chat.msgs.indexOf(m);
+  if(k>=0&&!m.content&&!m.error)chat.msgs.splice(k,1);
+
+  save();
+
+  if(cur===chat)renderThread();
+  renderList();
+  setBusy();
+ };
+
+ const llm=async(url,model,useWeb,ms)=>{
+  const hist=chat.msgs.slice(-13,-1).filter(x=>x.content);
+  const last=hist[hist.length-1]?.content||'';
+  const day=new Date().toDateString();
+  const core=words(last.toLowerCase()).filter(w=>!STOP.has(w)).slice(0,8);
+  let web='';
+
   if(useWeb&&core.length&&last.length>12&&!/^(write|draft|compose|translate|rewrite|fix|debug|code|hi|hello|thanks)\b/i.test(last)){
    stat(el(),'Searching the web…');
-   try{const res=await wiki(core.join(' '));if(res.length){m.src=res.map(({title,url})=>({title,url}));web=res.map((x,i)=>`[${i+1}] ${x.title}: ${x.text}`).join('\n\n')}}catch{}}
-  const sys=[persona,cfg.sys.trim(),`Today is ${day}.`,web&&`Web results are below. Use them when relevant and cite them as [1], [2]. If they don’t help, ignore them.\n\n${web}`].filter(Boolean).join('\n\n');
+   try{
+    const res=await wiki(core.join(' '));
+    if(res.length){
+     m.src=res.map(({title,url})=>({title,url}));
+     web=res.map((x,i)=>`[${i+1}] ${x.title}: ${x.text}`).join('\n\n');
+    }
+   }catch(e){
+    console.warn('Web lookup:',e);
+   }
+  }
+
+  const sys=buildSystemPrompt([
+   `Today is ${day}.`,
+   web&&`Web results are below. Use them when relevant and cite them as [1], [2]. If they don’t help, ignore them.\n\n${web}`
+  ].filter(Boolean).join('\n\n'));
+
   stat(el(),'Thinking…');
-  for await(const t of sse(await chatFree(url,model,[{role:'system',content:sys},...hist],true,c.ab,ms),c))push(t);
-  if(!m.content&&!c.stop)throw new Error('the model sent an empty reply')};
+
+  const messages=[
+   {role:'system',content:sys},
+   ...hist.map(x=>({role:x.role,content:x.content}))
+  ];
+
+  for await(const t of sse(
+   await chatFree(url,model,messages,true,c.ab,ms),
+   c
+  )){
+   push(t);
+  }
+
+  if(!m.content&&!c.stop)throw new Error('the model sent an empty reply');
+ };
+
  try{
   if(cfg.model==='mind'){
    const u=mindUrl();
    let serverError='';
-   if(u){try{await llm(u+'/v1/chat/completions','parley',true,PERSONA,45000);return c.fin()}catch(e){if(c.stop||m.content)throw e;serverError=e?.message||'unknown server error';m.src=undefined;c.ab=new AbortController()}}
-   const a=await mind(chat,t=>stat(el(),t));if(u)a.text='*Cloudflare AI could not answer ('+serverError+'). This reply is from Parley’s built-in fallback engine, not the language model.*\n\n'+a.text;
-   m.src=a.src;m.topic=a.topic;for(const w of a.text.split(/(?<=\s)/)){if(c.stop)break;push(w);await new Promise(r=>setTimeout(r,10))}return c.fin()}
-  await llm(POLL,cfg.model,cfg.web)
- }catch(e){if(!c.stop)m.error=errText(e)}
- c.fin()}
-function stop(){if(ctl&&!ctl.done){ctl.stop=true;ctl.ab?.abort();ctl.fin()}}
-function submit(){const v=inp.value.trim();if(busy||!v)return;inp.value='';fit();send(v)}
-function fit(){inp.style.height='auto';inp.style.height=Math.min(inp.scrollHeight,200)+'px';setBusy()}
-function openChat(c){stop();cur=c;stick=true;renderThread();renderList();closeNav();sc.scrollTop=sc.scrollHeight}
-function newChat(){stop();cur=null;renderThread();renderList();closeNav();if(!matchMedia('(pointer:coarse)').matches)inp.focus()}
+
+   if(u){
+    try{
+     await llm(u+'/v1/chat/completions','parley',true,45000);
+     return c.fin();
+    }catch(e){
+     if(c.stop||m.content)throw e;
+     serverError=e?.message||'unknown server error';
+     m.src=undefined;
+     c.ab=new AbortController();
+    }
+   }
+
+   const a=await mind(chat,t=>stat(el(),t));
+
+   if(u){
+    a.text='*Cloudflare AI could not answer ('+serverError+'). This reply is from Parley AI’s built-in fallback engine, not the language model.*\n\n'+a.text;
+   }
+
+   m.src=a.src;
+   m.topic=a.topic;
+
+   for(const w of a.text.split(/(?<=\s)/)){
+    if(c.stop)break;
+    push(w);
+    await new Promise(r=>setTimeout(r,10));
+   }
+
+   return c.fin();
+  }
+
+  await llm(POLL,cfg.model,cfg.web,45000);
+
+ }catch(e){
+  if(!c.stop)m.error=errText(e);
+ }
+
+ c.fin();
+}
+
+function stop(){
+ if(ctl&&!ctl.done){
+  ctl.stop=true;
+  ctl.ab?.abort();
+  ctl.fin();
+ }
+}
+
+function submit(){
+ const v=inp.value.trim();
+ if(busy||!v)return;
+ inp.value='';
+ fit();
+ send(v);
+}
+
+function fit(){
+ inp.style.height='auto';
+ inp.style.height=Math.min(inp.scrollHeight,200)+'px';
+ setBusy();
+}
+
+function openChat(c){
+ stop();
+ cur=c;
+ stick=true;
+ renderThread();
+ renderList();
+ closeNav();
+ sc.scrollTop=sc.scrollHeight;
+}
+
+function newChat(){
+ stop();
+ cur=null;
+ renderThread();
+ renderList();
+ closeNav();
+ if(!matchMedia('(pointer:coarse)').matches)inp.focus();
+}
+
 const closeNav=()=>document.body.classList.remove('open');
-const flash=(b,h)=>{const o=b.innerHTML;b.innerHTML=h;setTimeout(()=>b.innerHTML=o,1200)};
+const flash=(b,h)=>{
+ const o=b.innerHTML;
+ b.innerHTML=h;
+ setTimeout(()=>b.innerHTML=o,1200);
+};
 const copy=t=>navigator.clipboard?.writeText(t).catch(()=>{});
 
-/* events */
+/* =========================================================
+   UI EVENTS
+   ========================================================= */
 inp.addEventListener('input',fit);
-inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&!matchMedia('(pointer:coarse)').matches){e.preventDefault();submit()}});
+
+inp.addEventListener('keydown',e=>{
+ if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&!matchMedia('(pointer:coarse)').matches){
+  e.preventDefault();
+  submit();
+ }
+});
+
 go.onclick=()=>busy?stop():submit();
 $('#new').onclick=newChat;
 $('#menu').onclick=()=>document.body.classList.add('open');
 $('#scrim').onclick=closeNav;
-$('#list').onclick=e=>{const it=e.target.closest('.it');if(!it)return;const c=chats.find(x=>x.id===it.dataset.id);if(!c)return;
- if(e.target.closest('[data-del]')){if(c===cur){stop();cur=null;renderThread()}chats=chats.filter(x=>x!==c);deleteCloudChat(c.id);save();renderList()}else openChat(c)};
-th.onclick=e=>{const b=e.target.closest('button');if(!b)return;
- if(b.dataset.s!=null)return send(SUG[b.dataset.s][1]);
- if('copy' in b.dataset){copy(b.closest('.code').querySelector('code').textContent);return flash(b,'Copied')}
- const a=b.dataset.act;if(!a||busy)return;
- if(a==='copy'){copy(cur.msgs[b.dataset.n].content);flash(b,ic('ok'))}
- else{cur.msgs.pop();reply()}};
-const sel=$('#model');
-const FAM=[['Claude',/claude|anthropic|sonnet|opus|haiku/],['ChatGPT (OpenAI)',/openai|gpt/],['Gemini',/gemini|google/],['DeepSeek',/deepseek/],['Mistral',/mistral/],['Llama',/llama/],['Qwen',/qwen/],['Grok',/grok|xai/]];
-const fillSel=()=>{const o=([v,n])=>`<option value="${esc(v)}">${esc(n)}</option>`,g=new Map();
- FREE.forEach(x=>{const k=(FAM.find(f=>f[1].test((x[0]+' '+x[1]).toLowerCase()))||['Other'])[0];g.set(k,[...(g.get(k)||[]),x])});
- sel.innerHTML=`<optgroup label="Built in: no sign-in, no download"><option value="mind">Parley Mind</option></optgroup>`+[...FAM.map(f=>f[0]),'Other'].filter(k=>g.has(k)).map(k=>`<optgroup label="${k}: free, no key">${g.get(k).map(o).join('')}</optgroup>`).join('');
- if(cfg.model!=='mind'&&!FREE.some(x=>x[0]===cfg.model))sel.insertAdjacentHTML('beforeend',o([cfg.model,cfg.model]));sel.value=cfg.model};
-fillSel();
-(async()=>{try{const j=await(await fetch('https://text.pollinations.ai/models',{signal:AbortSignal.timeout?.(8000)})).json();
- const L=j.filter(x=>x.name&&!/audio|tts|midi|unity|evil|image|flux/i.test(x.name)&&(!x.output_modalities||x.output_modalities.includes('text'))&&(!x.tier||x.tier==='anonymous')).slice(0,40);
- if(L.length){FREE=L.map(x=>[x.name,(x.description||x.name).slice(0,40)]);fillSel()}}catch{}})();
-const wb=$('#web'),paintWeb=()=>{wb.classList.toggle('on',cfg.web);wb.setAttribute('aria-pressed',cfg.web);wb.style.display=cfg.model==='mind'?'none':''};wb.onclick=()=>{cfg.web=!cfg.web;saveCfg();paintWeb()};paintWeb();
-sel.onchange=()=>{cfg.model=sel.value;saveCfg();paintWeb();};
-const paintTheme=()=>$('#theme').innerHTML=ic(document.documentElement.dataset.theme==='dark'?'sun':'moon');
-$('#theme').onclick=()=>{const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=cfg.theme=t;saveCfg();paintTheme()};
-const dlg=$('#dlg'),openCfg=()=>{$('#sys').value=cfg.sys;$('#mu').value=cfg.mindUrl;dlg.showModal()};
-$('#cfg').onclick=openCfg;
-$('#ok').onclick=()=>{cfg.sys=$('#sys').value;cfg.mindUrl=$('#mu').value;saveCfg();dlg.close()};
-$('#wipe').onclick=async()=>{if(confirm('Delete all chats? This can’t be undone.')){stop();chats=[];cur=null;save();if(fbUser)await deleteAllCloudChats();else guestChats=[];renderThread();renderList();dlg.close()}};
-dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.close()});
-addEventListener('keydown',e=>{if(e.key==='Escape')closeNav()});
 
-paintTheme();renderList();renderThread();setBusy();renderAccount();
+$('#list').onclick=e=>{
+ const it=e.target.closest('.it');
+ if(!it)return;
+
+ const c=chats.find(x=>x.id===it.dataset.id);
+ if(!c)return;
+
+ if(e.target.closest('[data-del]')){
+  if(c===cur){
+   stop();
+   cur=null;
+   renderThread();
+  }
+
+  chats=chats.filter(x=>x!==c);
+  deleteCloudChat(c.id);
+  save();
+  renderList();
+ }else{
+  openChat(c);
+ }
+};
+
+th.onclick=e=>{
+ const b=e.target.closest('button');
+ if(!b)return;
+
+ if(b.dataset.s!=null)return send(SUG[b.dataset.s][1]);
+
+ if('copy' in b.dataset){
+  copy(b.closest('.code').querySelector('code').textContent);
+  return flash(b,'Copied');
+ }
+
+ const a=b.dataset.act;
+ if(!a||busy)return;
+
+ if(a==='copy'){
+  copy(cur.msgs[b.dataset.n].content);
+  flash(b,ic('ok'));
+ }else{
+  cur.msgs.pop();
+  reply();
+ }
+};
+
+/* =========================================================
+   MODEL SELECTOR
+   ========================================================= */
+const sel=$('#model');
+
+const FAM=[
+ ['Claude',/claude|anthropic|sonnet|opus|haiku/],
+ ['ChatGPT (OpenAI)',/openai|gpt/],
+ ['Gemini',/gemini|google/],
+ ['DeepSeek',/deepseek/],
+ ['Mistral',/mistral/],
+ ['Llama',/llama/],
+ ['Qwen',/qwen/],
+ ['Grok',/grok|xai/]
+];
+
+const fillSel=()=>{
+ const o=([v,n])=>`<option value="${esc(v)}">${esc(n)}</option>`;
+ const g=new Map();
+
+ FREE.forEach(x=>{
+  const k=(FAM.find(f=>f[1].test((x[0]+' '+x[1]).toLowerCase()))||['Other'])[0];
+  g.set(k,[...(g.get(k)||[]),x]);
+ });
+
+ sel.innerHTML=
+ `<optgroup label="Built in: no sign-in, no download"><option value="mind">Parley Mind</option></optgroup>`+
+ [...FAM.map(f=>f[0]),'Other'].filter(k=>g.has(k)).map(k=>
+  `<optgroup label="${k}: free, no key">${g.get(k).map(o).join('')}</optgroup>`
+ ).join('');
+
+ if(cfg.model!=='mind'&&!FREE.some(x=>x[0]===cfg.model)){
+  sel.insertAdjacentHTML('beforeend',o([cfg.model,cfg.model]));
+ }
+ sel.value=cfg.model;
+};
+
+fillSel();
+
+(async()=>{
+ try{
+  const j=await(await fetch('https://text.pollinations.ai/models',{signal:AbortSignal.timeout?.(8000)})).json();
+
+  const L=j.filter(x=>
+   x.name&&
+   !/audio|tts|midi|unity|evil|image|flux/i.test(x.name)&&
+   (!x.output_modalities||x.output_modalities.includes('text'))&&
+   (!x.tier||x.tier==='anonymous')
+  ).slice(0,40);
+
+  if(L.length){
+   FREE=L.map(x=>[x.name,(x.description||x.name).slice(0,40)]);
+   fillSel();
+  }
+ }catch(e){
+  console.warn('Model list unavailable:',e);
+ }
+})();
+
+const wb=$('#web');
+const paintWeb=()=>{
+ wb.classList.toggle('on',cfg.web);
+ wb.setAttribute('aria-pressed',cfg.web);
+ wb.style.display=cfg.model==='mind'?'none':'';
+};
+
+wb.onclick=()=>{
+ cfg.web=!cfg.web;
+ saveCfg();
+ paintWeb();
+};
+
+paintWeb();
+
+sel.onchange=()=>{
+ cfg.model=sel.value;
+ saveCfg();
+ paintWeb();
+};
+
+/* =========================================================
+   THEME
+   ========================================================= */
+const paintTheme=()=>{
+ $('#theme').innerHTML=ic(document.documentElement.dataset.theme==='dark'?'sun':'moon');
+};
+
+$('#theme').onclick=()=>{
+ const t=document.documentElement.dataset.theme==='dark'?'light':'dark';
+ document.documentElement.dataset.theme=cfg.theme=t;
+ saveCfg();
+ paintTheme();
+};
+
+/* =========================================================
+   SETTINGS
+   ========================================================= */
+const dlg=$('#dlg');
+
+const openCfg=()=>{
+ $('#nickname').value=cfg.nickname||PARLEY_IDENTITY.defaultNickname;
+ $('#style').value=cfg.style||'default';
+ $('#customStyle').value=cfg.customStyle||'';
+ $('#sys').value=cfg.sys||'';
+ $('#mu').value=cfg.mindUrl||'';
+ dlg.showModal();
+};
+
+$('#cfg').onclick=openCfg;
+
+$('#ok').onclick=()=>{
+ const nickname=$('#nickname').value.trim().slice(0,32);
+
+ cfg.nickname=nickname||PARLEY_IDENTITY.defaultNickname;
+ cfg.style=$('#style').value;
+ cfg.customStyle=$('#customStyle').value.trim();
+ cfg.sys=$('#sys').value;
+ cfg.mindUrl=$('#mu').value.trim();
+
+ saveCfg();
+ dlg.close();
+};
+
+$('#style').addEventListener('change',()=>{
+ const custom=$('#style').value==='custom';
+ $('#customStyle').disabled=!custom;
+ $('#customStyle').style.opacity=custom?'1':'.65';
+});
+
+$('#wipe').onclick=async()=>{
+ if(confirm('Delete all chats? This can’t be undone.')){
+  stop();
+  chats=[];
+  cur=null;
+  save();
+
+  if(fbUser)await deleteAllCloudChats();
+  else guestChats=[];
+
+  renderThread();
+  renderList();
+  dlg.close();
+ }
+};
+
+dlg.addEventListener('click',e=>{
+ if(e.target===dlg)dlg.close();
+});
+
+addEventListener('keydown',e=>{
+ if(e.key==='Escape')closeNav();
+});
+
+/* =========================================================
+   STARTUP
+   ========================================================= */
+$('#customStyle').disabled=cfg.style!=='custom';
+$('#customStyle').style.opacity=cfg.style==='custom'?'1':'.65';
+
+paintTheme();
+renderList();
+renderThread();
+setBusy();
+renderAccount();
+
 if(!matchMedia('(pointer:coarse)').matches)inp.focus();
+
 })();
 </script>
 </body>
