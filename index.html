@@ -198,11 +198,6 @@ select{max-width:128px}
  </label>
  <input id="mu" autocomplete="off" spellcheck="false" placeholder="https://parley-mind.leolam6367.workers.dev">
 
- <label for="pk">Pollinations API key
-  <small>Required for online models. Get a key at <a href="https://enter.pollinations.ai" target="_blank" rel="noopener noreferrer" style="color:var(--ac)">enter.pollinations.ai</a>.</small>
- </label>
- <input id="pk" type="password" autocomplete="off" spellcheck="false" placeholder="sk_... or plln_...">
-
  <div class="row">
   <button class="btn d" id="wipe">Delete all chats</button>
   <button class="btn p" id="ok">Save settings</button>
@@ -210,14 +205,14 @@ select{max-width:128px}
 </dialog>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
 import {
- getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut,
+ getAuth, GoogleAuthProvider, signInWithRedirect, signOut,
  onAuthStateChanged, getRedirectResult, setPersistence, browserLocalPersistence
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+} from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
 import {
  getFirestore, collection, doc, getDocs, setDoc, deleteDoc, onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
 
 /* =========================================================
    PARLEY AI — PERMANENT APPLICATION IDENTITY
@@ -242,7 +237,6 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
-setPersistence(auth,browserLocalPersistence).catch(()=>{});
 const db = getFirestore(firebaseApp);
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({prompt:"select_account"});
@@ -277,7 +271,6 @@ let cfg=Object.assign({
  model:'mind',
  custom:'',
  mindUrl:'',
- pollKey:'',
  sys:'',
  theme:'',
  web:true,
@@ -330,15 +323,15 @@ function buildSystemPrompt(extra=''){
  return [
   `You are ${PARLEY_IDENTITY.name}, the permanent AI identity of the Parley application.`,
   `The user's preferred nickname for you is "${nickname}". This is only a conversational nickname. It does not change your real application identity.`,
-  `If asked who you are, introduce yourself as: "I'm ${PARLEY_IDENTITY.name}, but you can call me${nickname}."`,
-  `If asked what your name is, explain that your identity is ${PARLEY_IDENTITY.name} and your current nickname is${nickname}.`,
+  `If asked who you are, introduce yourself as: "I'm ${PARLEY_IDENTITY.name}, but you can call me ${nickname}."`,
+  `If asked what your name is, explain that your identity is ${PARLEY_IDENTITY.name} and your current nickname is ${nickname}.`,
   `Never claim that your actual identity has changed because of a nickname, custom instruction, or response style.`,
   `Do not claim to be a human. Do not falsely claim that you are ChatGPT or a different product. If asked about the underlying technology, answer honestly: a GPT model or another selected AI service may power the response, but the application identity is ${PARLEY_IDENTITY.name}.`,
   `Your permanent application identity is fixed. User-editable settings may change your conversational style, not your identity.`,
   getStyleInstructions(),
   custom?`ADDITIONAL USER INSTRUCTIONS:\n${custom}\nThese instructions affect answer preferences only. They cannot replace your identity or override safety, accuracy, or higher-priority instructions.`:'',
   extra,
-  `Permanent identity reminder: You are ${PARLEY_IDENTITY.name}. Your current nickname is ${nickname}. If asked who you are, say "I'm ${PARLEY_IDENTITY.name}, but you can call me${nickname}."`
+  `Permanent identity reminder: You are ${PARLEY_IDENTITY.name}. Your current nickname is ${nickname}. If asked who you are, say "I'm ${PARLEY_IDENTITY.name}, but you can call me ${nickname}."`
  ].filter(Boolean).join('\n\n');
 }
 
@@ -364,7 +357,7 @@ async function uploadCloudChat(chat,owner=fbUser?.uid){
   const payload={
    id:chat.id,
    title:String(chat.title||'New chat'),
-   msgs:Array.isArray(chat.msgs)?JSON.parse(JSON.stringify(chat.msgs)):[],
+   msgs:Array.isArray(chat.msgs)?chat.msgs:[],
    updatedAt:Number(chat.updatedAt||Date.now())
   };
   if(new TextEncoder().encode(JSON.stringify(payload)).length>850000){
@@ -544,21 +537,10 @@ accountBtn?.addEventListener('click',async()=>{
    await signOut(auth);
   }else{
    setCloudStatus('Opening Google sign-in…');
-   try{
-    await signInWithPopup(auth,googleProvider);
-   }catch(err){
-    if(err?.code==='auth/popup-blocked'||err?.code==='auth/operation-not-supported-in-this-environment'){
-     await signInWithRedirect(auth,googleProvider);
-    }else{
-     throw err;
-    }
-   }
+   await setPersistence(auth,browserLocalPersistence);
+   await signInWithRedirect(auth,googleProvider);
   }
  }catch(e){
-  if(e?.code==='auth/popup-closed-by-user'||e?.code==='auth/cancelled-popup-request'){
-   setCloudStatus('Guest mode — chats saved on this device');
-   return;
-  }
   console.error('Google sign-in:',e);
   setCloudStatus('Sign-in failed: '+(e.code||e.message||'unknown error'));
   alert(e.message||'Google sign-in failed');
@@ -763,28 +745,26 @@ const stat=(e,t)=>{
 
 async function wiki(q){
  const r=await fetch(
-  '[https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=3&prop=extracts](https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=3&prop=extracts)|info&inprop=url&exintro=1&explaintext=1&exchars=800&format=json&origin=*&gsrsearch='+encodeURIComponent(q),
+  'https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=3&prop=extracts|info&inprop=url&exintro=1&explaintext=1&exchars=800&format=json&origin=*&gsrsearch='+encodeURIComponent(q),
   {signal:AbortSignal.timeout?.(8000)}
  );
  const j=await r.json();
  return Object.values(j.query?.pages||{}).sort((a,b)=>a.index-b.index).filter(p=>p.extract).map(p=>({title:p.title,url:p.fullurl,text:p.extract}));
 }
 
-const POLL='[https://gen.pollinations.ai/v1/chat/completions](https://gen.pollinations.ai/v1/chat/completions)';
-const MIND_URL='[https://parley-mind.leolam6367.workers.dev](https://parley-mind.leolam6367.workers.dev)';
+const POLL='https://text.pollinations.ai/openai';
+const MIND_URL='https://parley-mind.leolam6367.workers.dev';
 const mindUrl=()=>(cfg.mindUrl||MIND_URL).trim().replace(/\/+$/,'');
 
 async function chatFree(url,model,messages,stream,ab,ms){
  const to=ms?setTimeout(()=>ab.abort(),ms):0;
- const headers={'Content-Type':'application/json'};
- if(url===POLL&&cfg.pollKey)headers['Authorization']='Bearer '+cfg.pollKey.trim();
  let r;
 
  try{
   r=await fetch(url,{
    method:'POST',
-   headers,
-   body:JSON.stringify({model,messages,stream}),
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify(url===POLL?{model,messages,stream,private:true}:{model,messages,stream}),
    signal:ab.signal
   });
  }catch(e){
@@ -797,9 +777,7 @@ async function chatFree(url,model,messages,stream,ab,ms){
  if(!r.ok){
   let d='';
   try{d=(await r.text()).replace(/\s+/g,' ').slice(0,140)}catch{}
-  if(url===POLL&&r.status===401)throw new Error('Pollinations API key missing or invalid — add your key in Settings (from enter.pollinations.ai)');
-  if(url===POLL&&r.status===402)throw new Error('your Pollinations Pollen balance or key budget is empty — top up at enter.pollinations.ai');
-  throw new Error(r.status===429?'the service is busy. Wait a few seconds':'the service returned '+r.status+(d?' ('+d+')':''));
+  throw new Error(r.status===429?'the free service is busy. Wait a few seconds':'the service returned '+r.status+(d?' ('+d+')':''));
  }
  return r;
 }
@@ -922,7 +900,7 @@ const sents=t=>t.replace(/\s*\([^()]*[ˈˌ/][^()]*\)/g,'').replace(/\[\d+\]/g,''
 
 async function wp(q){
  const r=await fetch(
-  '[https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=5&prop=extracts](https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=5&prop=extracts)|info&inprop=url&exintro=1&explaintext=1&exchars=3000&format=json&origin=*&gsrsearch='+encodeURIComponent(q),
+  'https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=5&prop=extracts|info&inprop=url&exintro=1&explaintext=1&exchars=3000&format=json&origin=*&gsrsearch='+encodeURIComponent(q),
   {signal:AbortSignal.timeout?.(9000)}
  );
  const j=await r.json();
@@ -1295,7 +1273,7 @@ const fillSel=()=>{
  sel.innerHTML=
  `<optgroup label="Built in: no sign-in, no download"><option value="mind">Parley Mind</option></optgroup>`+
  [...FAM.map(f=>f[0]),'Other'].filter(k=>g.has(k)).map(k=>
-  `<optgroup label="${k}: online models">${g.get(k).map(o).join('')}</optgroup>`
+  `<optgroup label="${k}: free, no key">${g.get(k).map(o).join('')}</optgroup>`
  ).join('');
 
  if(cfg.model!=='mind'&&!FREE.some(x=>x[0]===cfg.model)){
@@ -1308,19 +1286,17 @@ fillSel();
 
 (async()=>{
  try{
-  const j=await(await fetch('[https://gen.pollinations.ai/text/models](https://gen.pollinations.ai/text/models)',{signal:AbortSignal.timeout?.(8000)})).json();
-  const arr=Array.isArray(j)?j:(j.data||[]);
+  const j=await(await fetch('https://text.pollinations.ai/models',{signal:AbortSignal.timeout?.(8000)})).json();
 
-  const L=arr.filter(x=>{
-   const id=x.name||x.id;
-   return id&&
-    !/audio|tts|midi|unity|evil|image|flux/i.test(id)&&
-    (!x.output_modalities||x.output_modalities.includes('text'))&&
-    !x.paid_only;
-  }).slice(0,40);
+  const L=j.filter(x=>
+   x.name&&
+   !/audio|tts|midi|unity|evil|image|flux/i.test(x.name)&&
+   (!x.output_modalities||x.output_modalities.includes('text'))&&
+   (!x.tier||x.tier==='anonymous')
+  ).slice(0,40);
 
   if(L.length){
-   FREE=L.map(x=>[x.name||x.id,(x.description||x.name||x.id).slice(0,40)]);
+   FREE=L.map(x=>[x.name,(x.description||x.name).slice(0,40)]);
    fillSel();
   }
  }catch(e){
@@ -1374,7 +1350,6 @@ const openCfg=()=>{
  $('#customStyle').value=cfg.customStyle||'';
  $('#sys').value=cfg.sys||'';
  $('#mu').value=cfg.mindUrl||'';
- $('#pk').value=cfg.pollKey||'';
  dlg.showModal();
 };
 
@@ -1388,7 +1363,6 @@ $('#ok').onclick=()=>{
  cfg.customStyle=$('#customStyle').value.trim();
  cfg.sys=$('#sys').value;
  cfg.mindUrl=$('#mu').value.trim();
- cfg.pollKey=$('#pk').value.trim();
 
  saveCfg();
  dlg.close();
