@@ -205,14 +205,14 @@ select{max-width:128px}
 </dialog>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {
  getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut,
  onAuthStateChanged, getRedirectResult, setPersistence, browserLocalPersistence
-} from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
  getFirestore, collection, doc, getDocs, setDoc, deleteDoc, onSnapshot
-} from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 /* =========================================================
    PARLEY AI — PERMANENT APPLICATION IDENTITY
@@ -237,6 +237,7 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
+setPersistence(auth,browserLocalPersistence).catch(()=>{});
 const db = getFirestore(firebaseApp);
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({prompt:"select_account"});
@@ -285,41 +286,13 @@ if(!['default','polite','moderate','rude','custom'].includes(cfg.style))cfg.styl
 if(typeof cfg.customStyle!=='string')cfg.customStyle='';
 
 let cur=null,busy=false,ctl=null,stick=true;
-let fbUser=null,cloudReady=false,cloudUnsubscribe=null,authInitialized=false;
-const cloudTimers=new Map();
+let fbUser=null,cloudReady=false,cloudUnsubscribe=null,cloudTimer=null;
 let guestChats=[...chats],authSwitchToken=0;
 const accountBtn=$('#account'),cloudStatus=$('#cloudStatus');
 const saveCfg=()=>ls.s('pl.cfg',cfg);
 const setCloudStatus=t=>{if(cloudStatus)cloudStatus.textContent=t};
 const accountCacheKey=uid=>'pl.chats.user.'+uid;
 const cloudCollection=uid=>collection(db,'users',uid,'chats');
-
-function clearAllCloudTimers(){
- for(const t of cloudTimers.values())clearTimeout(t);
- cloudTimers.clear();
-}
-
-function sanitizeChatForCloud(chat){
- return{
-  id:String(chat.id),
-  title:String(chat.title||'New chat'),
-  msgs:(Array.isArray(chat.msgs)?chat.msgs:[]).map(m=>{
-   const clean={
-    role:String(m.role||'user'),
-    content:String(m.content||'')
-   };
-   if(Array.isArray(m.src)&&m.src.length){
-    clean.src=m.src
-     .filter(s=>s&&s.url)
-     .map(s=>({title:String(s.title||s.url),url:String(s.url)}));
-   }
-   if(typeof m.topic==='string'&&m.topic)clean.topic=m.topic;
-   if(typeof m.error==='string'&&m.error)clean.error=m.error;
-   return clean;
-  }),
-  updatedAt:Number(chat.updatedAt||Date.now())
- };
-}
 
 function getNickname(){
  const n=String(cfg.nickname||'').trim().slice(0,32);
@@ -382,7 +355,12 @@ function mergeChats(local,remote){
 async function uploadCloudChat(chat,owner=fbUser?.uid){
  if(!owner||!fbUser||fbUser.uid!==owner||!cloudReady||!chat?.id)return;
  try{
-  const payload=sanitizeChatForCloud(chat);
+  const payload={
+   id:chat.id,
+   title:String(chat.title||'New chat'),
+   msgs:Array.isArray(chat.msgs)?JSON.parse(JSON.stringify(chat.msgs)):[],
+   updatedAt:Number(chat.updatedAt||Date.now())
+  };
   if(new TextEncoder().encode(JSON.stringify(payload)).length>850000){
    setCloudStatus('This chat is too large to sync.');
    return;
@@ -397,24 +375,15 @@ async function uploadCloudChat(chat,owner=fbUser?.uid){
 }
 
 function queueCloudSave(chat){
- if(!fbUser||!cloudReady||!chat?.id)return;
- const existing=cloudTimers.get(chat.id);
- if(existing)clearTimeout(existing);
+ if(!fbUser||!cloudReady||!chat)return;
+ clearTimeout(cloudTimer);
  const owner=fbUser.uid;
- const snapshot=sanitizeChatForCloud(chat);
- const timer=setTimeout(()=>{
-  cloudTimers.delete(snapshot.id);
-  if(fbUser?.uid===owner)uploadCloudChat(snapshot,owner);
+ cloudTimer=setTimeout(()=>{
+  if(fbUser?.uid===owner)uploadCloudChat(chat,owner);
  },500);
- cloudTimers.set(snapshot.id,timer);
 }
 
 async function deleteCloudChat(id){
- const pending=cloudTimers.get(id);
- if(pending){
-  clearTimeout(pending);
-  cloudTimers.delete(id);
- }
  if(!fbUser||!cloudReady)return;
  const owner=fbUser.uid;
  try{
@@ -426,7 +395,6 @@ async function deleteCloudChat(id){
 }
 
 async function deleteAllCloudChats(){
- clearAllCloudTimers();
  if(!fbUser||!cloudReady)return;
  const owner=fbUser.uid;
  try{
@@ -441,17 +409,15 @@ async function deleteAllCloudChats(){
 
 async function switchFirebaseUser(user){
  const token=++authSwitchToken;
- const prevUid=fbUser?.uid||null;
- const nextUid=user?.uid||null;
 
  if(cloudUnsubscribe){
   cloudUnsubscribe();
   cloudUnsubscribe=null;
  }
- clearAllCloudTimers();
+ clearTimeout(cloudTimer);
  cloudReady=false;
  fbUser=user||null;
- if(prevUid!==nextUid)cur=null;
+ cur=null;
  renderAccount();
 
  if(!user){
@@ -471,28 +437,16 @@ async function switchFirebaseUser(user){
 
   if(token!==authSwitchToken)return;
 
-  const remote=snap.docs.map(d=>{
-   const data=d.data()||{};
-   return{
-    ...data,
-    id:d.id,
-    title:String(data.title||'New chat'),
-    msgs:Array.isArray(data.msgs)?data.msgs:[],
-    updatedAt:Number(data.updatedAt||0)
-   };
-  });
+  const remote=snap.docs.map(d=>({...d.data(),id:d.id}));
   let merged=mergeChats(local,remote);
 
   const migrationKey='pl.guestMigrated.'+user.uid;
-  const unsyncedGuest=guestChats.filter(g=>g?.id&&!merged.some(m=>m.id===g.id));
-  if(!ls.g(migrationKey,false)&&unsyncedGuest.length){
+  if(!ls.g(migrationKey,false)&&guestChats.length){
    const importGuest=confirm(
-    `You have ${unsyncedGuest.length} guest conversation(s). Copy them into this Google account?`
+    `You have ${guestChats.length} guest conversation(s). Copy them into this Google account?`
    );
-   if(importGuest){
-    merged=mergeChats(merged,unsyncedGuest);
-    ls.s(migrationKey,true);
-   }
+   if(importGuest)merged=mergeChats(merged,guestChats);
+   ls.s(migrationKey,true);
   }
 
   chats=merged;
@@ -533,16 +487,7 @@ async function switchFirebaseUser(user){
      continue;
     }
 
-    if(busy&&cur?.id===id)continue;
-
-    const data=change.doc.data()||{};
-    const remoteChat={
-     ...data,
-     id,
-     title:String(data.title||'New chat'),
-     msgs:Array.isArray(data.msgs)?data.msgs:[],
-     updatedAt:Number(data.updatedAt||0)
-    };
+    const remoteChat={...change.doc.data(),id};
     const ix=chats.findIndex(c=>c.id===id);
     const localChat=ix<0?null:chats[ix];
 
@@ -574,11 +519,7 @@ async function switchFirebaseUser(user){
   chats=localFallbackForUser(user.uid);
   renderList();
   renderThread();
-  setCloudStatus(
-   e?.code==='permission-denied'
-    ?'Signed in, but Firestore permissions blocked sync — local copy kept'
-    :'Cloud unavailable ('+(e?.code||'offline')+') — local copy kept'
-  );
+  setCloudStatus('Cloud unavailable — local copy kept');
  }
 }
 
@@ -591,64 +532,41 @@ function localFallbackForUser(uid){
    GOOGLE SIGN-IN
    ========================================================= */
 accountBtn?.addEventListener('click',async()=>{
- if(accountBtn.disabled)return;
- accountBtn.disabled=true;
  try{
   if(fbUser){
    if(!confirm('Sign out? Your cloud conversations will stay saved.'))return;
    await signOut(auth);
   }else{
    setCloudStatus('Opening Google sign-in…');
-   await setPersistence(auth,browserLocalPersistence);
    try{
-    const cred=await signInWithPopup(auth,googleProvider);
-    if(cred?.user&&(!fbUser||fbUser.uid!==cred.user.uid)){
-     await switchFirebaseUser(cred.user);
-    }
-   }catch(popupErr){
-    const code=popupErr?.code||'';
-    if(code==='auth/popup-blocked'||code==='auth/operation-not-supported-in-this-environment'){
-     setCloudStatus('Redirecting to Google sign-in…');
+    await signInWithPopup(auth,googleProvider);
+   }catch(err){
+    if(err?.code==='auth/popup-blocked'||err?.code==='auth/operation-not-supported-in-this-environment'){
      await signInWithRedirect(auth,googleProvider);
-     return;
+    }else{
+     throw err;
     }
-    if(code==='auth/popup-closed-by-user'||code==='auth/cancelled-popup-request'){
-     setCloudStatus(fbUser?'Google account connected — chats synced':'Sign-in cancelled — guest mode');
-     return;
-    }
-    throw popupErr;
    }
   }
  }catch(e){
-  console.error('Google sign-in:',e);
-  const code=e?.code||'';
-  if(code==='auth/unauthorized-domain'){
-   setCloudStatus(`Add "${location.hostname}" to Firebase Authorized Domains.`);
-  }else{
-   setCloudStatus('Sign-in failed: '+(code||e?.message||'unknown error'));
+  if(e?.code==='auth/popup-closed-by-user'||e?.code==='auth/cancelled-popup-request'){
+   setCloudStatus('Guest mode — chats saved on this device');
+   return;
   }
-  alert(e?.message||'Google sign-in failed');
- }finally{
-  accountBtn.disabled=false;
+  console.error('Google sign-in:',e);
+  setCloudStatus('Sign-in failed: '+(e.code||e.message||'unknown error'));
+  alert(e.message||'Google sign-in failed');
  }
 });
 
 onAuthStateChanged(auth,user=>{
- const sameUser=authInitialized&&((fbUser?.uid||null)===(user?.uid||null));
- authInitialized=true;
- if(!sameUser)switchFirebaseUser(user);
+ switchFirebaseUser(user);
 });
 
-getRedirectResult(auth)
- .then(res=>{
-  if(res?.user&&(!fbUser||fbUser.uid!==res.user.uid)){
-   switchFirebaseUser(res.user);
-  }
- })
- .catch(e=>{
-  console.error('Google redirect result:',e);
-  setCloudStatus('Google sign-in could not be completed: '+(e.code||e.message||'unknown error'));
- });
+getRedirectResult(auth).catch(e=>{
+ console.error('Google redirect result:',e);
+ setCloudStatus('Google sign-in could not be completed: '+(e.code||e.message||'unknown error'));
+});
 
 /* =========================================================
    SAVE SYSTEM
