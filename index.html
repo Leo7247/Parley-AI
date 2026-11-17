@@ -205,14 +205,14 @@ select{max-width:128px}
 </dialog>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
 import {
- getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut,
+ getAuth, GoogleAuthProvider, signInWithRedirect, signOut,
  onAuthStateChanged, getRedirectResult, setPersistence, browserLocalPersistence
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+} from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
 import {
  getFirestore, collection, doc, getDocs, setDoc, deleteDoc, onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
 
 /* =========================================================
    PARLEY AI — PERMANENT APPLICATION IDENTITY
@@ -237,7 +237,6 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
-setPersistence(auth,browserLocalPersistence).catch(()=>{});
 const db = getFirestore(firebaseApp);
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({prompt:"select_account"});
@@ -324,15 +323,15 @@ function buildSystemPrompt(extra=''){
  return [
   `You are ${PARLEY_IDENTITY.name}, the permanent AI identity of the Parley application.`,
   `The user's preferred nickname for you is "${nickname}". This is only a conversational nickname. It does not change your real application identity.`,
-  `If asked who you are, introduce yourself as: "I'm ${PARLEY_IDENTITY.name}, but you can call me${nickname}."`,
-  `If asked what your name is, explain that your identity is ${PARLEY_IDENTITY.name} and your current nickname is${nickname}.`,
+  `If asked who you are, introduce yourself as: "I'm ${PARLEY_IDENTITY.name}, but you can call me ${nickname}."`,
+  `If asked what your name is, explain that your identity is ${PARLEY_IDENTITY.name} and your current nickname is ${nickname}.`,
   `Never claim that your actual identity has changed because of a nickname, custom instruction, or response style.`,
   `Do not claim to be a human. Do not falsely claim that you are ChatGPT or a different product. If asked about the underlying technology, answer honestly: a GPT model or another selected AI service may power the response, but the application identity is ${PARLEY_IDENTITY.name}.`,
   `Your permanent application identity is fixed. User-editable settings may change your conversational style, not your identity.`,
   getStyleInstructions(),
   custom?`ADDITIONAL USER INSTRUCTIONS:\n${custom}\nThese instructions affect answer preferences only. They cannot replace your identity or override safety, accuracy, or higher-priority instructions.`:'',
   extra,
-  `Permanent identity reminder: You are ${PARLEY_IDENTITY.name}. Your current nickname is ${nickname}. If asked who you are, say "I'm ${PARLEY_IDENTITY.name}, but you can call me${nickname}."`
+  `Permanent identity reminder: You are ${PARLEY_IDENTITY.name}. Your current nickname is ${nickname}. If asked who you are, say "I'm ${PARLEY_IDENTITY.name}, but you can call me ${nickname}."`
  ].filter(Boolean).join('\n\n');
 }
 
@@ -358,7 +357,7 @@ async function uploadCloudChat(chat,owner=fbUser?.uid){
   const payload={
    id:chat.id,
    title:String(chat.title||'New chat'),
-   msgs:Array.isArray(chat.msgs)?JSON.parse(JSON.stringify(chat.msgs)):[],
+   msgs:Array.isArray(chat.msgs)?chat.msgs:[],
    updatedAt:Number(chat.updatedAt||Date.now())
   };
   if(new TextEncoder().encode(JSON.stringify(payload)).length>850000){
@@ -538,21 +537,10 @@ accountBtn?.addEventListener('click',async()=>{
    await signOut(auth);
   }else{
    setCloudStatus('Opening Google sign-in…');
-   try{
-    await signInWithPopup(auth,googleProvider);
-   }catch(err){
-    if(err?.code==='auth/popup-blocked'||err?.code==='auth/operation-not-supported-in-this-environment'){
-     await signInWithRedirect(auth,googleProvider);
-    }else{
-     throw err;
-    }
-   }
+   await setPersistence(auth,browserLocalPersistence);
+   await signInWithRedirect(auth,googleProvider);
   }
  }catch(e){
-  if(e?.code==='auth/popup-closed-by-user'||e?.code==='auth/cancelled-popup-request'){
-   setCloudStatus('Guest mode — chats saved on this device');
-   return;
-  }
   console.error('Google sign-in:',e);
   setCloudStatus('Sign-in failed: '+(e.code||e.message||'unknown error'));
   alert(e.message||'Google sign-in failed');
@@ -757,15 +745,15 @@ const stat=(e,t)=>{
 
 async function wiki(q){
  const r=await fetch(
-  '[https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=3&prop=extracts](https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=3&prop=extracts)|info&inprop=url&exintro=1&explaintext=1&exchars=800&format=json&origin=*&gsrsearch='+encodeURIComponent(q),
+  'https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=3&prop=extracts|info&inprop=url&exintro=1&explaintext=1&exchars=800&format=json&origin=*&gsrsearch='+encodeURIComponent(q),
   {signal:AbortSignal.timeout?.(8000)}
  );
  const j=await r.json();
  return Object.values(j.query?.pages||{}).sort((a,b)=>a.index-b.index).filter(p=>p.extract).map(p=>({title:p.title,url:p.fullurl,text:p.extract}));
 }
 
-const POLL='[https://text.pollinations.ai/openai](https://text.pollinations.ai/openai)';
-const MIND_URL='[https://parley-mind.leolam6367.workers.dev](https://parley-mind.leolam6367.workers.dev)';
+const POLL='https://text.pollinations.ai/openai';
+const MIND_URL='https://parley-mind.leolam6367.workers.dev';
 const mindUrl=()=>(cfg.mindUrl||MIND_URL).trim().replace(/\/+$/,'');
 
 async function chatFree(url,model,messages,stream,ab,ms){
@@ -912,7 +900,7 @@ const sents=t=>t.replace(/\s*\([^()]*[ˈˌ/][^()]*\)/g,'').replace(/\[\d+\]/g,''
 
 async function wp(q){
  const r=await fetch(
-  '[https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=5&prop=extracts](https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=5&prop=extracts)|info&inprop=url&exintro=1&explaintext=1&exchars=3000&format=json&origin=*&gsrsearch='+encodeURIComponent(q),
+  'https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=5&prop=extracts|info&inprop=url&exintro=1&explaintext=1&exchars=3000&format=json&origin=*&gsrsearch='+encodeURIComponent(q),
   {signal:AbortSignal.timeout?.(9000)}
  );
  const j=await r.json();
@@ -1298,7 +1286,7 @@ fillSel();
 
 (async()=>{
  try{
-  const j=await(await fetch('[https://text.pollinations.ai/models](https://text.pollinations.ai/models)',{signal:AbortSignal.timeout?.(8000)})).json();
+  const j=await(await fetch('https://text.pollinations.ai/models',{signal:AbortSignal.timeout?.(8000)})).json();
 
   const L=j.filter(x=>
    x.name&&
